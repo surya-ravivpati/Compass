@@ -9,10 +9,17 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "test:db": "vitest run tests/db",
+    "typecheck": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate"
   },
   "dependencies": {
+    "@supabase/ssr": "0.12.7",
+    "@supabase/supabase-js": "2.116.0",
+    "drizzle-orm": "0.45.2",
     "next": "15.5.25",
+    "postgres": "3.4.9",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "zod": "4.6.4"
@@ -23,6 +30,7 @@
     "@types/node": "24.13.4",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "drizzle-kit": "0.31.10",
     "eslint": "^9",
     "eslint-config-next": "15.5.25",
     "tailwindcss": "^4",

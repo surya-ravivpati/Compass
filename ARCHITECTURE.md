@@ -114,19 +114,84 @@ Two refinements matter:
   alongside AP Physics C rather than before it -- the **most permissive**
   reading wins. Otherwise students chase a deadline that is not real.
 
-## Data boundaries (Phase 2 onward)
+## Data boundaries
 
-Not built yet. The intended shape:
+Two kinds of table, and the distinction governs everything about how they are
+secured.
 
-- Reference tables (courses, prerequisites, pathways, requirements, clubs,
-  meetings) are read-only to normal users.
-- User-owned tables (profiles, completed courses, plan courses, plan
-  activities) are protected by Postgres row-level security. A user reaches
-  their own rows and no one else's.
-- The service-role key is server-only and never reaches the browser. Anything
-  prefixed `NEXT_PUBLIC_` is public; nothing secret gets that prefix.
-- Validation lives in `/validation` and is shared between the API layer and the
-  seed scripts, so there is one definition of what valid data is.
+**Reference tables** — `courses`, `course_prerequisites`, `pathways`,
+`pathway_goal_courses`, `graduation_requirements`, `clubs`, `club_meetings`.
+The school's catalog. Every signed-in student reads the same rows; nobody
+writes them through the application. They are loaded by the seed script, which
+connects with the service role.
+
+**Student-owned tables** — `student_profiles`, `completed_courses`,
+`plan_courses`, `plan_activities`. Each carries a `user_id`, and row-level
+security confines every student to their own rows.
+
+`db/schema.ts` classifies every table into one list or the other, and a test
+fails if a new table appears in neither. That check exists because the likely
+failure is not a wrong policy but a forgotten one — and under Supabase's
+default grants, a table with no policy is world-writable.
+
+### Which client touches what
+
+| | connects as | reaches |
+|---|---|---|
+| Drizzle (`db/index.ts`) | `DATABASE_URL`, privileged | reference tables, migrations, seeding |
+| Supabase (`lib/supabase/server.ts`) | the student's own access token | student-owned rows |
+
+Student-owned rows are **never** read or written through Drizzle. They go
+through Supabase carrying the student's token, so row-level security is
+enforced by Postgres against a verified identity rather than by application
+code remembering to add a `WHERE user_id = ...`. An ORM query that forgets its
+filter is a data breach; a missing RLS policy is caught by the tests in
+`tests/db`.
+
+There is no service-role client in `lib/`. The service role bypasses RLS
+entirely, and the only thing that legitimately needs it is the seed script.
+
+### Secrets
+
+`lib/env.ts` splits configuration in two. `publicEnv()` returns only
+`NEXT_PUBLIC_*` values, which Next inlines into the browser bundle and which
+are therefore public permanently. `serverEnv()` throws if it is ever reached
+from a browser bundle, so a bad import fails at the first request instead of
+quietly leaking the service role key.
+
+### Sessions
+
+The middleware refreshes the Supabase session on every matched request and
+redirects unauthenticated visitors away from `/plan`, `/activities`,
+`/settings`, and `/welcome`. It uses `getUser()` rather than `getSession()`:
+`getSession` reads the cookie and trusts it, while `getUser` revalidates the
+token with the auth server. Where the answer decides what data someone sees,
+the cookie is not something to take at its word.
+
+The post-login `next` parameter is passed through `safeNextPath`, which accepts
+only same-origin paths. Without it, a link to our own login page could land a
+student on someone else's site.
+
+## Proving RLS works
+
+`tests/db` holds two layers, because they fail in different ways.
+
+`rls-policies.test.ts` reads the migration SQL and checks it statically: every
+table classified, RLS enabled, privileges revoked, four separate policies per
+student-owned table, `WITH CHECK` present on every UPDATE. It needs no
+database, so it runs everywhere and catches the regression that is actually
+likely — someone adding a table months from now and not writing its policies.
+
+`rls.test.ts` is the real proof. It runs against a live Postgres as the
+`authenticated` role with the same `request.jwt.claims` PostgREST sets from a
+Supabase JWT, and shows that one student cannot read, update, delete, insert,
+or take ownership of another's rows. Every negative assertion is paired with a
+control showing the same query works for the rightful owner — otherwise the
+suite would pass just as happily with a broken connection.
+
+Set `TEST_DATABASE_URL` to run it. It is deliberately a different variable
+from `DATABASE_URL`, because a test that creates and deletes users should not
+find production by default.
 
 ## Testing strategy
 
@@ -145,7 +210,7 @@ of the logic that matters.
 | | | status |
 |---|---|---|
 | 1 | Solver | **done** |
-| 2 | Drizzle schema, catalog seed, Supabase auth, RLS | not started |
+| 2 | Drizzle schema, catalog seed, Supabase auth, RLS | **done** |
 | 3 | UI primitives, planning grid, drag and drop | not started |
 | 4 | Goal selector, activities, status summary | not started |
 | 5 | Landing page, polish, accessibility, deploy | not started |

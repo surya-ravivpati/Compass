@@ -17,7 +17,7 @@ the courses downstream of it grey out, with an explanation of exactly why.
 
 ## Status
 
-**Phase 1 of 5 is complete: the solver.**
+**Phases 1 and 2 of 5 are complete: the solver, and the data layer with auth.**
 
 Built and tested:
 
@@ -28,10 +28,14 @@ Built and tested:
 - unreachable-course detection with plain-English explanations
 - graduation requirement checking
 - activity hour budgeting and meeting-conflict detection
+- the database schema, with row-level security on every student-owned table
+- a 78-course catalog, 16 clubs, 5 pathways, and graduation requirements
+- email/password authentication, protected routes, and session refresh
 
-Not built yet: the database, authentication, and every screen. `app/page.tsx`
-is a placeholder that exists only so the project builds. See
-[ARCHITECTURE.md](ARCHITECTURE.md) for what lands in which phase.
+Not built yet: every screen. `app/page.tsx` is a placeholder that exists only
+so the project builds, and `/plan` proves the protected route works rather
+than being the planner. See [ARCHITECTURE.md](ARCHITECTURE.md) for what lands
+in which phase.
 
 ## Getting started
 
@@ -43,15 +47,25 @@ cd Morrow
 npm install
 ```
 
-There is nothing to configure yet. `.env.example` lists the variables Phase 2
-will introduce; until then no `.env` file is needed.
+The solver tests need no configuration:
 
 ```bash
-npm test        # run the solver test suite
+npm test
 npm run typecheck
 npm run lint
-npm run dev     # placeholder page only, until Phase 3
 ```
+
+To run the app you need a Supabase project (the free tier is enough):
+
+1. Create one at [supabase.com](https://supabase.com).
+2. `cp .env.example .env.local` and fill in the values from
+   **Project Settings -> API** and **Project Settings -> Database**.
+3. `npm run db:migrate` to create the tables and policies.
+4. `npm run dev`.
+
+To run the live row-level-security proof, set `TEST_DATABASE_URL` to a scratch
+or development database and run `npm run test:db`. Without it those assertions
+are skipped and the run says so.
 
 ### If you do not have Node
 

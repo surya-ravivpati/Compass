@@ -16,12 +16,16 @@ directions.
 ## Commands
 
 ```bash
-npm test          # vitest run
+npm test           # vitest run -- everything
+npm run test:db    # database and RLS tests only
 npm run test:watch
-npm run typecheck # tsc --noEmit
-npm run lint      # eslint .
-npm run dev       # placeholder page only until Phase 3
+npm run typecheck  # tsc --noEmit
+npm run lint       # eslint .
+npm run dev
 npm run build
+
+npm run db:generate  # drizzle-kit generate, after editing db/schema.ts
+npm run db:migrate   # apply migrations (needs DATABASE_URL)
 ```
 
 All three of test / typecheck / lint must pass before anything is considered
@@ -29,9 +33,16 @@ done.
 
 ## Current state
 
-Phase 1 (the solver) is complete: 132 tests. Phases 2-5 -- database, auth, UI,
-marketing -- are not started. `app/page.tsx` is a placeholder that exists only
-so `next build` succeeds; it is not the landing page.
+Phases 1 and 2 are complete: the solver, the database schema with row-level
+security, a 78-course catalog, and Supabase authentication.
+
+Phases 3-5 -- the planner UI, activities, and marketing -- are not started.
+`app/page.tsx` is a placeholder that exists only so `next build` succeeds; it
+is not the landing page. `/plan` is a protected placeholder proving auth works
+end to end; it is not wired to the solver yet.
+
+The live RLS proof (`tests/db/rls.test.ts`) runs only when `TEST_DATABASE_URL`
+is set. Without it those 40 assertions are skipped, and the run says so.
 
 ## Architecture in one paragraph
 
@@ -55,6 +66,12 @@ Breaking one of these is a bug even if tests pass:
 6. **Nothing fake.** No buttons that do nothing, no placeholder UI that looks
    finished, no invented data. Unfinished work stays visibly disabled and
    marked `TODO:`.
+7. **Student-owned rows go through Supabase, never Drizzle.** Drizzle's
+   connection is privileged and bypasses RLS; it is for reference data,
+   migrations, and seeding only.
+8. **Every table is classified** in `STUDENT_OWNED_TABLES` or
+   `REFERENCE_TABLES` in `db/schema.ts`, with policies to match. A test fails
+   otherwise, because an unclassified table is world-writable by default.
 
 ## Conventions
 
@@ -97,6 +114,14 @@ Do not relitigate these without a reason:
   middle-school coursework. Real schools often do not.
 - `unreachable` explains via the single prerequisite that pushed a course
   latest. When two independent chains both fail, only one is named.
+- There is no `npm run db:seed` script yet. `db/seed/run.ts` is written and
+  tested, but running a TypeScript entry point needs a runner that is not in
+  the stack; `node` requires explicit `.ts` extensions on every import, which
+  the solver does not use.
+- Account setup collects the graduation year only. Picking completed courses
+  needs the subject-grouped picker from Phase 3 and is deliberately not stubbed.
+- `lib/supabase/client.ts` is written but nothing imports it yet; the browser
+  client is needed once Phase 3 adds interactive components.
 
 ## Out of scope
 
