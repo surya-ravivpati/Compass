@@ -17,7 +17,7 @@ the courses downstream of it grey out, with an explanation of exactly why.
 
 ## Status
 
-**Phases 1 and 2 of 5 are complete: the solver, and the data layer with auth.**
+**Phases 1–3 of 5 are complete: the solver, data/auth layer, and planner.**
 
 Built and tested:
 
@@ -31,11 +31,14 @@ Built and tested:
 - the database schema, with row-level security on every student-owned table
 - a 78-course catalog, 16 clubs, 5 pathways, and graduation requirements
 - email/password authentication, protected routes, and session refresh
+- a four-year planning grid with drag-and-drop and keyboard placement
+- immediate prerequisite, reachability, requirement, and deadline feedback
+- accessible hover/focus explanations for blocked and unreachable courses
 
 Not built yet: every screen. `app/page.tsx` is a placeholder that exists only
-so the project builds, and `/plan` proves the protected route works rather
-than being the planner. See [ARCHITECTURE.md](ARCHITECTURE.md) for what lands
-in which phase.
+so the project builds. `/plan` is the working planner; activities, settings,
+and marketing arrive in Phases 4–5. See [ARCHITECTURE.md](ARCHITECTURE.md) for
+what lands in which phase.
 
 ## Getting started
 
@@ -82,10 +85,13 @@ Make sure `~/.local/bin` is on your `PATH`.
 ## Project structure
 
 ```
-app/            Next.js App Router pages (placeholder until Phase 3)
+app/            Next.js App Router pages and server actions
+components/ui/  reusable UI primitives and design tokens
+components/plan/the planning grid, catalog rail, and status rail
 lib/solver/     the solver -- pure TypeScript, no React, no database
+lib/plan/       plan loading and pure planner view-model composition
 validation/     Zod schemas guarding data that arrives as JSON
-tests/solver/   solver tests and the fixture catalog
+tests/          solver, data, auth, and planner-view tests
 ```
 
 The one rule worth knowing before you touch anything: **`lib/solver` imports

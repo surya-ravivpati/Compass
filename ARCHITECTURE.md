@@ -211,6 +211,6 @@ of the logic that matters.
 |---|---|---|
 | 1 | Solver | **done** |
 | 2 | Drizzle schema, catalog seed, Supabase auth, RLS | **done** |
-| 3 | UI primitives, planning grid, drag and drop | not started |
+| 3 | UI primitives, planning grid, drag and drop | **done** |
 | 4 | Goal selector, activities, status summary | not started |
 | 5 | Landing page, polish, accessibility, deploy | not started |

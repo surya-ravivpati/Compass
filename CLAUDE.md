@@ -43,13 +43,15 @@ done.
 
 ## Current state
 
-Phases 1 and 2 are complete: the solver, the database schema with row-level
-security, a 78-course catalog, and Supabase authentication.
+Phases 1–3 are complete: the solver, database schema with row-level security,
+a 78-course catalog, Supabase authentication, and the working planner.
 
-Phases 3-5 -- the planner UI, activities, and marketing -- are not started.
-`app/page.tsx` is a placeholder that exists only so `next build` succeeds; it
-is not the landing page. `/plan` is a protected placeholder proving auth works
-end to end; it is not wired to the solver yet.
+`/plan` loads a student's real plan, re-solves the full catalog client-side
+after every placement, and persists changes through Supabase server actions.
+It has drag-and-drop, keyboard placement controls, live reachable/unreachable
+states, plain-English explanations, and requirement progress. Phases 4–5 --
+activities, settings, and marketing -- are not started. `app/page.tsx` remains
+a placeholder until the marketing phase.
 
 The live RLS proof (`tests/db/rls.test.ts`) runs only when `TEST_DATABASE_URL`
 is set. Without it those 40 assertions are skipped, and the run says so.
@@ -110,6 +112,11 @@ Do not relitigate these without a reason:
 - **Next.js is pinned to 15.x**, not `latest` (16.x), per the mandated stack.
 - **Violations and unreachable courses are separate outputs.** Different
   states, different fixes.
+- **The planner re-solves the full catalog after every change.** It is small
+  enough that correctness matters more than incremental cleverness.
+- **CourseGraph stays server/client-boundary-safe.** Server components pass
+  plain courses; the client builds its own graph because a graph contains
+  functions and cannot cross the React serialization boundary.
 
 ## Known limitations
 
@@ -124,10 +131,10 @@ Do not relitigate these without a reason:
   middle-school coursework. Real schools often do not.
 - `unreachable` explains via the single prerequisite that pushed a course
   latest. When two independent chains both fail, only one is named.
-- Account setup collects the graduation year only. Picking completed courses
-  needs the subject-grouped picker from Phase 3 and is deliberately not stubbed.
-- `lib/supabase/client.ts` is written but nothing imports it yet; the browser
-  client is needed once Phase 3 adds interactive components.
+- Account setup collects the graduation year only. Completed-course selection
+  will land in Settings in Phase 4; it is deliberately not stubbed.
+- `lib/supabase/client.ts` is not used by the planner. Persistence goes through
+  server actions so database credentials never reach the browser.
 
 ## Out of scope
 
