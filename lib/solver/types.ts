@@ -327,6 +327,30 @@ export interface ActivitySelection {
 /** Default weekly-hour cap. Configurable per student in settings. */
 export const DEFAULT_WEEKLY_HOUR_CAP = 15;
 
+/** What one school year costs the student, week to week. */
+export interface HourBudget {
+  readonly grade: Grade;
+  readonly bySeason: Readonly<Record<ActiveSeason, number>>;
+  /**
+   * The worst season's load. This is the year's headline number because it is
+   * the one the student actually lives: a fall commitment and a spring
+   * commitment never cost the same week, so adding them together would report
+   * a workload nobody ever has.
+   */
+  readonly peak: number;
+  readonly cap: number;
+  readonly overCap: boolean;
+}
+
+/** Two activities the student cannot actually attend both of. */
+export interface ActivityConflict {
+  readonly grade: Grade;
+  readonly season: ActiveSeason;
+  readonly clubIds: readonly [string, string];
+  readonly dayOfWeek: DayOfWeek;
+  readonly reason: string;
+}
+
 /** "15:30" -> 930. Convenience for turning catalog data into solver input. */
 export function minutesFromHHMM(hhmm: string): number {
   const match = /^(\d{1,2}):(\d{2})$/.exec(hhmm);
