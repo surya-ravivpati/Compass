@@ -273,6 +273,13 @@ export interface PrereqViolation {
   readonly courseId: CourseId;
   readonly grade: Grade;
   readonly term: Term;
+  /**
+   * `prerequisite` -- the course is where the student put it, but what it
+   * needs is not finished in time.
+   * `not_offered` -- the slot itself is impossible; the school does not run
+   * this course that term.
+   */
+  readonly kind: "prerequisite" | "not_offered";
   readonly reason: string;
 }
 

@@ -1,6 +1,6 @@
 import { buildCatalog, buildGraph } from "@/lib/solver/graph";
-import type { Catalog, CourseGraph } from "@/lib/solver/graph";
-import type { Grade, Placement, Plan, Term } from "@/lib/solver/types";
+import type { CourseGraph } from "@/lib/solver/graph";
+import type { Catalog, Grade, Placement, Plan, Term } from "@/lib/solver/types";
 import { FIXTURE_COURSES } from "./catalog";
 
 export * from "./catalog";
