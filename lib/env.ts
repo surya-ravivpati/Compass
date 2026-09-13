@@ -43,6 +43,26 @@ export function publicEnv(): PublicEnv {
   });
 }
 
+/**
+ * Public configuration, or null when it is absent.
+ *
+ * Exists so the middleware can tell "Supabase is not set up on this machine"
+ * apart from a genuine failure, and let the public pages render anyway. A
+ * fresh clone should be able to run `npm run dev` and look at the site without
+ * first creating a Supabase project.
+ *
+ * It returns null rather than a set of blank defaults on purpose: a caller has
+ * to decide what to do about it, and cannot accidentally proceed with an empty
+ * URL as though everything were fine.
+ */
+export function tryPublicEnv(): PublicEnv | null {
+  const result = publicSchema.safeParse({
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  });
+  return result.success ? result.data : null;
+}
+
 export function serverEnv(): ServerEnv {
   if (typeof window !== "undefined") {
     throw new Error(
