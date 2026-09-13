@@ -33,14 +33,30 @@ const url = testDatabaseUrl();
 
 const describeLive = url === undefined ? describe.skip : describe;
 
-if (url === undefined) {
-  // Visible in the run output, so a skipped proof is never mistaken for a
-  // passed one.
-  console.warn(
-    "\n[rls] TEST_DATABASE_URL is not set -- the live RLS proof did NOT run.\n" +
-      "      The static policy checks in rls-policies.test.ts still ran.\n",
+/**
+ * A skipped proof must never read as a passed one.
+ *
+ * Vitest's summary does say "40 skipped", but that is easy to slide past. This
+ * test always runs, so the reason appears in the output under its own name --
+ * and in CI, where REQUIRE_DB_TESTS is set, a missing database fails the build
+ * rather than quietly proving nothing.
+ */
+describe("the live RLS proof", () => {
+  it(
+    url === undefined
+      ? "DID NOT RUN -- set TEST_DATABASE_URL to prove RLS against a real database"
+      : "ran against the database in TEST_DATABASE_URL",
+    () => {
+      if (process.env.REQUIRE_DB_TESTS === "1") {
+        expect(
+          url,
+          "REQUIRE_DB_TESTS=1 but TEST_DATABASE_URL is unset, so row-level " +
+            "security was never actually exercised.",
+        ).toBeDefined();
+      }
+    },
   );
-}
+});
 
 describeLive("row-level security, against a live database", () => {
   let sql: Sql;

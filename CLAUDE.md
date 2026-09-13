@@ -26,7 +26,17 @@ npm run build
 
 npm run db:generate  # drizzle-kit generate, after editing db/schema.ts
 npm run db:migrate   # apply migrations (needs DATABASE_URL)
+npm run db:validate  # check the catalog without touching the database
+npm run db:seed      # validate, then load the catalog
 ```
+
+Every database script loads `.env.local` through Node's own
+`--env-file-if-exists`, including the test scripts -- the live RLS proof keys
+off `TEST_DATABASE_URL`, and having it visible to one command but not another
+is how a skipped proof gets mistaken for a passing one.
+
+In CI, set `REQUIRE_DB_TESTS=1` so a missing `TEST_DATABASE_URL` fails the
+build instead of quietly proving nothing.
 
 All three of test / typecheck / lint must pass before anything is considered
 done.
@@ -114,10 +124,6 @@ Do not relitigate these without a reason:
   middle-school coursework. Real schools often do not.
 - `unreachable` explains via the single prerequisite that pushed a course
   latest. When two independent chains both fail, only one is named.
-- There is no `npm run db:seed` script yet. `db/seed/run.ts` is written and
-  tested, but running a TypeScript entry point needs a runner that is not in
-  the stack; `node` requires explicit `.ts` extensions on every import, which
-  the solver does not use.
 - Account setup collects the graduation year only. Picking completed courses
   needs the subject-grouped picker from Phase 3 and is deliberately not stubbed.
 - `lib/supabase/client.ts` is written but nothing imports it yet; the browser
