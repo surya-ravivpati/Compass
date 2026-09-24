@@ -1,9 +1,9 @@
 import type { Catalog } from '../catalog.ts'
 import { ancestors, descendants } from '../graph.ts'
 import { evaluatePrerequisites, overlaySpans } from '../prereqs.ts'
-import { allocateRequirements } from '../requirements.ts'
+import { allocateRequirements, countsTowardAt } from '../requirements.ts'
 import { occupiedTerms, yearOfTerm } from '../terms.ts'
-import { TERM_COUNT, type Course, type MustInclude, type Placement, type Requirement, type TermIndex } from '../types.ts'
+import { TERM_COUNT, type Course, type MustInclude, type Placement, type Policy, type Requirement, type TermIndex } from '../types.ts'
 import { emptyOverlay, extendOverlay, infeasibility, loadAt, type Overlay, type PlanningContext } from './context.ts'
 import { interestScore, matchedGoals, rigorScore, workloadScore, type PreferenceModel } from './preferences.ts'
 
@@ -48,19 +48,24 @@ export const ANCHOR_SAME_TERM = 8
 export const ANCHOR_KEPT = 4
 
 /**
- * One lane per category requirement, ordered so a lane comes after any lane
- * whose courses it depends on (science after math, because chemistry needs
- * algebra).
+ * One lane per category requirement, plus one per every-term policy no
+ * requirement carries, ordered so a lane comes after any lane whose courses
+ * it depends on (science after math, because chemistry needs algebra).
  */
 export function buildLanes(catalog: Catalog, model: PreferenceModel, fixed: Placement[]): Lane[] {
   const progress = allocateRequirements(catalog, fixed)
   const lanes: Lane[] = []
+  const everyTermPolicies = catalog.school.policies.filter((p): p is Extract<Policy, { kind: 'every-term' }> => p.kind === 'every-term')
   for (const r of progress.requirements) {
     const req = r.requirement
     if (req.kind !== 'category') continue
     const satisfying = [...catalog.courses.values()].filter((c) => c.satisfies.includes(req.id))
     const department = dominant(satisfying.map((c) => c.department))
-    const policy = catalog.school.policies.find((p) => p.kind === 'every-term' && p.department === department)
+    // A requirement carries its department's every-term rule only when every
+    // course there counts toward it: Health sits beside P.E., but "P.E. every
+    // semester" doesn't make Health an every-semester course.
+    const coversDepartment = [...catalog.courses.values()].every((c) => c.department !== department || c.satisfies.includes(req.id))
+    const policy = coversDepartment ? everyTermPolicies.find((p) => p.department === department) : undefined
     const everyTerm = !!policy
     const courseIds = satisfying
       .filter((c) => !everyTerm || c.department === department)
@@ -90,6 +95,31 @@ export function buildLanes(catalog: Catalog, model: PreferenceModel, fixed: Plac
       affinity,
     }
     if (lane.deficit > 0 || lane.missingGroups.length > 0 || lane.everyTerm || lane.affinity > 0) lanes.push(lane)
+  }
+  // An every-term rule whose subject no requirement counts on its own (P.E.
+  // every semester, its credits in the general bucket) still needs a lane,
+  // or nothing would schedule it.
+  for (const policy of everyTermPolicies) {
+    if (lanes.some((l) => l.everyTerm && l.department === policy.department)) continue
+    const courseIds = [...catalog.courses.values()]
+      .filter((c) => c.department === policy.department || policy.alsoCounts?.includes(c.id))
+      .map((c) => c.id)
+      .sort()
+    if (courseIds.length === 0) continue
+    const name = catalog.departments.get(policy.department)?.name ?? policy.department
+    lanes.push({
+      id: `policy:${policy.id}`,
+      requirement: { id: `policy:${policy.id}`, name, description: policy.label, credits: 0, kind: 'category', source: policy.source },
+      department: policy.department,
+      subject: name.toLowerCase(),
+      courseIds,
+      everyTerm: true,
+      everyTermPolicyLabel: policy.label,
+      deficit: 0,
+      missingGroups: [],
+      sameSequence: false,
+      affinity: 2,
+    })
   }
   return orderLanes(catalog, lanes)
 }
@@ -335,7 +365,7 @@ function tracksFor(search: TrackSearch, preferredSequence: string | undefined): 
       score += scored.score
       reasons.set(reasonKey(course.id, term), scored.reasons)
       overlay = extendOverlay(catalog, overlay, { courseId: course.id, term, status: 'planned' })
-      credits += course.credits
+      if (countsTowardAt(course, lane.id, term)) credits += course.credits
       for (const t of occupiedTerms(term, course.durationTerms)) covered.add(t)
       lane.missingGroups.forEach((g, i) => {
         if (!satisfied.has(i) && g.anyOf.includes(course.id)) satisfied.add(i)
@@ -379,7 +409,8 @@ function tracksFor(search: TrackSearch, preferredSequence: string | undefined): 
       return sum + Math.min(...g.anyOf.map((id) => catalog.courses.get(id)?.credits ?? 0))
     }, 0)
     const open = group >= 0 ? lane.deficit - creditsBefore : lane.deficit - creditsBefore - reserved
-    const useful = Math.min(course.credits, Math.max(0, open))
+    // A course that only counts from a later grade is no progress yet.
+    const useful = countsTowardAt(course, lane.id, term) ? Math.min(course.credits, Math.max(0, open)) : 0
     score += useful * 12
     score += (course.credits - useful) * lane.affinity
 

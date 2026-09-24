@@ -1,6 +1,7 @@
 import type { Catalog } from './catalog.ts'
 import {
   BEFORE_HIGH_SCHOOL,
+  type Course,
   type MustInclude,
   type Placement,
   type PlacementStatus,
@@ -87,6 +88,17 @@ export function creditsFor(catalog: Catalog, placement: Placement): number {
 }
 
 /**
+ * Whether a course taken in `term` counts toward a requirement: it must list
+ * the requirement, and some count only from a grade on (see
+ * `satisfiesFromGrade`). Work before high school counts from no grade.
+ */
+export function countsTowardAt(course: Course, requirementId: string, term: TermIndex): boolean {
+  if (!course.satisfies.includes(requirementId)) return false
+  const from = course.satisfiesFromGrade?.[requirementId]
+  return from === undefined || (term >= 0 && Math.floor(term / 2) + 9 >= from)
+}
+
+/**
  * Allocates every placement's credits to requirements and reports progress.
  *
  * Deterministic in three stages: named "must include" courses go to their
@@ -139,7 +151,7 @@ export function allocateRequirements(catalog: Catalog, placements: Placement[]):
 
   const eligible = (req: Requirement, e: Entry): boolean => {
     const course = catalog.courses.get(e.courseId)!
-    if (!course.satisfies.includes(req.id)) return false
+    if (!countsTowardAt(course, req.id, e.term)) return false
     const seq = sequenceFor.get(req.id)
     if (seq !== undefined) return (course.sequence?.id ?? `course:${course.id}`) === seq
     return true

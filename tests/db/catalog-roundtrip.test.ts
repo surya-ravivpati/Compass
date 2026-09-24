@@ -15,6 +15,26 @@ describe('catalog storage', () => {
     expect(loaded).toEqual(DEMO_SCHOOL)
   })
 
+  it('keeps the fields a real catalog uses: estimated workloads, grade-limited credit, placement, waiver courses', async () => {
+    const db = await openPglite()
+    const school = tinySchool({
+      policies: [
+        {
+          kind: 'every-term',
+          id: 'math-every',
+          label: 'Math every semester',
+          department: 'math',
+          alsoCounts: ['d'],
+          enforcement: 'target',
+          source: { kind: 'catalog', document: 'coursed.pdf', page: 6, quote: 'Math each semester.' },
+        },
+      ],
+    })
+    Object.assign(school.courses[1]!, { workloadEstimated: true, satisfiesFromGrade: { math: 12 }, byPlacement: true })
+    await seedSchool(db, school)
+    expect(await loadSchool(db, school.id)).toEqual(school)
+  })
+
   it('refuses to seed an invalid catalog', async () => {
     const db = await openPglite()
     const broken = tinySchool()

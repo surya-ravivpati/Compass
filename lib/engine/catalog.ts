@@ -127,6 +127,12 @@ export function validateCatalog(school: SchoolConfig): CatalogIssue[] {
     for (const req of course.satisfies) {
       if (!requirementIds.has(req)) error(at, `Satisfies unknown requirement "${req}".`)
     }
+    for (const [req, grade] of Object.entries(course.satisfiesFromGrade ?? {})) {
+      if (!course.satisfies.includes(req)) error(at, `satisfiesFromGrade names "${req}", which the course doesn't satisfy.`)
+      if (grade !== undefined && !course.grades.includes(grade) && !course.grades.some((g) => g > grade)) {
+        error(at, `satisfiesFromGrade: the course is never taken in grade ${grade} or later.`)
+      }
+    }
     if (course.maxEnrollments !== undefined && course.maxEnrollments < 1) {
       error(at, 'maxEnrollments must be at least 1.')
     }
@@ -164,6 +170,9 @@ export function validateCatalog(school: SchoolConfig): CatalogIssue[] {
     const at = `policies.${policy.id}`
     if (policy.kind === 'every-term' && !departmentIds.has(policy.department)) {
       error(at, `Unknown department "${policy.department}".`)
+    }
+    if (policy.kind === 'every-term') {
+      for (const id of policy.alsoCounts ?? []) if (!courseIds.has(id)) error(at, `Unknown course "${id}".`)
     }
     if (policy.kind === 'placement') {
       for (const id of policy.courseIds) if (!courseIds.has(id)) error(at, `Unknown course "${id}".`)

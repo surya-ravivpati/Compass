@@ -14,6 +14,7 @@ import {
 } from 'drizzle-orm/pg-core'
 import type {
   Department,
+  GradeLevel,
   MathPlacementOption,
   MustInclude,
   Policy,
@@ -72,6 +73,8 @@ export const courses = pgTable(
     seasons: text('seasons').array().notNull(),
     level: text('level').notNull(),
     workload: integer('workload').notNull(),
+    /** The catalog doesn't state a workload; it was estimated from the level. */
+    workloadEstimated: boolean('workload_estimated').notNull().default(false),
     lab: boolean('lab').notNull().default(false),
     tags: text('tags').array().notNull(),
     satisfies: text('satisfies').array().notNull(),
@@ -79,6 +82,8 @@ export const courses = pgTable(
     sequenceStep: integer('sequence_step'),
     equivalenceGroup: text('equivalence_group'),
     maxEnrollments: integer('max_enrollments'),
+    satisfiesFromGrade: jsonb('satisfies_from_grade').$type<Partial<Record<string, GradeLevel>>>(),
+    byPlacement: boolean('by_placement').notNull().default(false),
     notes: text('notes').array(),
     source: jsonb('source').$type<SourceRef>().notNull(),
     sortOrder: integer('sort_order').notNull().default(0),

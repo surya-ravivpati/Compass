@@ -422,7 +422,7 @@ function checkPolicies(
       const department = catalog.departments.get(policy.department)
       const dept = department?.shortName ?? department?.name.toLowerCase() ?? policy.department
       for (let term = student.startTerm; term < TERM_COUNT; term++) {
-        const has = load[term]!.courseIds.some((id) => catalog.courses.get(id)!.department === policy.department)
+        const has = load[term]!.courseIds.some((id) => catalog.courses.get(id)!.department === policy.department || !!policy.alsoCounts?.includes(id))
         if (has) continue
         const candidates = openCoursesAt(catalog, policy.department, term, placements, spans)
         const severity = candidates.length === 0 ? 'info' : policy.enforcement === 'required' ? 'error' : 'warning'

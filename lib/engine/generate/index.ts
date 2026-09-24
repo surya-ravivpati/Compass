@@ -83,6 +83,10 @@ export function generatePlan(input: GenerateInput): GenerateResult {
   const model = buildPreferenceModel(prefs, catalog.school)
   const excluded = new Set([...(input.exclude ?? [])].filter((id) => !required.includes(id)))
   const fixed = [...input.history, ...pins]
+  // A course the school places students in (a test, an audition) is never the
+  // planner's pick, unless the student asked for it or already has it.
+  const chosen = new Set([...prefs.targetCourses, ...fixed.map((p) => p.courseId), ...(input.anchors ?? []).map((p) => p.courseId)])
+  for (const course of catalog.courses.values()) if (course.byPlacement && !chosen.has(course.id)) excluded.add(course.id)
   const anchors = new Map<string, Set<number>>()
   for (const p of input.anchors ?? []) {
     if (p.status === 'planned') anchors.set(p.courseId, new Set([...(anchors.get(p.courseId) ?? []), p.term]))

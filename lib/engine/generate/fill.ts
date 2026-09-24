@@ -1,7 +1,7 @@
 import type { Catalog } from '../catalog.ts'
 import { ancestors, descendants } from '../graph.ts'
 import { evaluatePrerequisites } from '../prereqs.ts'
-import { allocateRequirements } from '../requirements.ts'
+import { allocateRequirements, countsTowardAt } from '../requirements.ts'
 import { placementPhrase, termLabel, yearOfTerm } from '../terms.ts'
 import { TERM_COUNT, type Course, type TermIndex } from '../types.ts'
 import { emptyOverlay, infeasibility, type PlanningContext } from './context.ts'
@@ -74,6 +74,7 @@ export function fillElectives(args: FillArgs): FillResult {
     for (const course of rank(pool, startTerm)) {
       if (remaining <= 0 && missingGroups.every((g) => g.some((id) => ctx.has(id)))) break
       for (let t = startTerm; t < TERM_COUNT; t++) {
+        if (!countsTowardAt(course, r.requirement.id, t)) continue
         if (infeasibility(ctx, none, course, t, max, args.excluded)) continue
         ctx.add({ courseId: course.id, term: t, status: 'planned' })
         args.reasons.set(reasonKey(course.id, t), [

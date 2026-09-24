@@ -161,7 +161,7 @@ export function explainPlacement(
     if (policy.kind === 'placement' && policy.courseIds.includes(course.id)) {
       facts.push({ kind: 'policy', text: `${policy.label}.`, source: policy.source })
     }
-    if (policy.kind === 'every-term' && policy.department === course.department) {
+    if (policy.kind === 'every-term' && (policy.department === course.department || policy.alsoCounts?.includes(course.id))) {
       facts.push({ kind: 'policy', text: `${policy.label}.`, source: policy.source })
     }
   }

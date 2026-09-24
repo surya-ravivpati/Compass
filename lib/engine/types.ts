@@ -98,6 +98,17 @@ export interface Course {
   equivalenceGroup?: string
   /** How many times the course may be taken. Default 1. */
   maxEnrollments?: number
+  /**
+   * Counts toward a requirement only from this grade on: at Stevenson, an
+   * English elective is English credit in senior year and elective credit
+   * before it.
+   */
+  satisfiesFromGrade?: Partial<Record<string, GradeLevel>>
+  /**
+   * The school places students in it (a test, an audition, an application).
+   * The planner never chooses it on its own; a student can still add it.
+   */
+  byPlacement?: boolean
   /** Catalog notes the engine does not enforce. */
   notes?: string[]
   source: SourceRef
@@ -136,6 +147,11 @@ export type Policy =
       label: string
       /** Department that must appear every term. */
       department: string
+      /**
+       * Courses from other departments that fill the term instead (at
+       * Stevenson, Driver Education or Dance in place of P.E.).
+       */
+      alsoCounts?: string[]
       enforcement: Enforcement
       source: SourceRef
     }
