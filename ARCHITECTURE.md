@@ -79,7 +79,10 @@ left (semesters × maximum load × ½ credit).
 1. **Lanes.** One per category requirement, holding the courses that satisfy it,
    ordered so a lane comes after lanes its courses depend on (science after math).
 2. **Tracks.** For each lane, a beam search runs year by year over what the lane
-   holds each year: nothing, one full-year course, or up to two semester courses.
+   holds each year: nothing, one full-year course, or up to two semester courses
+   (a full-year course may also run alongside a pinned semester one). A language
+   lane tries the student's language first, then the school's others in order, so
+   a sequence that can't be started hands over instead of failing the lane.
    Hard constraints prune (availability, grade, prerequisites against everything
    already placed, repeats, capacity, same-language continuity with no gap years,
    every-semester coverage). Preferences only score: requirement progress (credits
@@ -104,9 +107,16 @@ real numbers; the onboarding reveal replays them.
 
 - `previewEdit` applies an edit to a copy, re-validates, and diffs findings. If the
   edit breaks something, `replanAround` runs the generator with every untouched
-  course pinned, the edited course locked, and only the broken courses (and
-  electives in overfilled terms) released — a complete valid plan that keeps the
-  student's change. If none exists it falls back to shifting dependents later.
+  course pinned, the edited course locked, and only the broken courses, what builds
+  on them, and electives in terms still overfilled released (never a course a kept
+  one needs). If that finds no valid plan, it releases the affected subjects' whole
+  pathways, then electives too — that last tier only counts if it changes at most
+  four courses, since a bigger re-plan belongs in What if?. Re-plans are anchored:
+  courses already in the plan score a bonus for staying where they were, so the
+  proposal is the smallest change that works, and a complete valid plan that keeps
+  the student's change. Failing all three, it falls back to shifting dependents later, and
+  offers that only if it leaves fewer problems than the edit alone; the pending bar
+  names what an adjustment still leaves unfixed.
   The student chooses: apply with adjustments, keep the change as-is, or revert.
 - `runScenario` answers what-ifs (swap, move, drop, add, change priorities) the same
   way and `comparePlans` reports changed courses, prerequisite effects, requirement

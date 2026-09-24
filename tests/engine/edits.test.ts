@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest'
 import {
   allocateRequirements,
   applyEdit,
+  describeEdit,
   diffPlans,
   explainPlacement,
   previewEdit,
+  repairDependents,
   runScenario,
   whyNot,
   type Plan,
@@ -102,10 +104,81 @@ describe('editing with downstream consequences', () => {
     expect(preview.after.graduationPathValid).toBe(false)
   })
 
-  it('a harmless move has no consequences', () => {
+  describe('when senior year is already full of math', () => {
+    // Engineering goals fill senior year with semester math (Discrete Math,
+    // Multivariable Calculus) and AP Physics C, which runs alongside BC.
+    const eng = prefs({ rigor: 'very-rigorous', goals: ['engineering', 'stem'] })
+    const plan = generateFor('geometry', eng).plan
+    const precalc = plan.placements.find((p) => p.courseId === 'ap-precalculus')!
+    const edit = { kind: 'move' as const, courseId: 'ap-precalculus', fromTerm: precalc.term, toTerm: precalc.term + 2 }
+
+    it('re-plans to a valid plan that keeps math in every semester', () => {
+      expect(plan.placements.some((p) => p.courseId === 'discrete-mathematics' && p.term === 6)).toBe(true)
+      const cascade = previewEdit(demo, student, plan, edit, eng).cascade!
+      expect(cascade.validation.graduationPathValid).toBe(true)
+      expect(termOf(cascade.plan, 'ap-precalculus')).toBe(precalc.term + 2)
+      // A pinned fall semester of Discrete Math doesn't shut BC out of senior year.
+      expect(termOf(cascade.plan, 'ap-calculus-bc')).toBe(6)
+      // The year AP Precalculus left gets another math course.
+      expect(cascade.changes.some((c) => c.kind === 'add' && c.term === precalc.term && demo.courses.get(c.courseId)!.department === 'math')).toBe(true)
+      // AP Physics C may run alongside BC, so it stays where it was.
+      expect(cascade.changes.some((c) => c.courseId === 'ap-physics-c-mechanics')).toBe(false)
+      expect(cascade.summary).toMatch(/^Also move AP Calculus BC to senior year, add AP Statistics in sophomore year/)
+    })
+
+    it('the fallback repair keeps a course allowed to run alongside the one it moves', () => {
+      const repaired = repairDependents(demo, student, applyEdit(plan, edit), new Set([`ap-precalculus@${edit.toTerm}`]), eng)
+      const bc = repaired.changes.find((c) => c.courseId === 'ap-calculus-bc')
+      expect(bc?.kind === 'move' ? bc.toTerm : null).toBe(6)
+      expect(repaired.changes.some((c) => c.courseId === 'ap-physics-c-mechanics')).toBe(false)
+      expect(repaired.changes.filter((c) => c.kind === 'remove').map((c) => c.courseId).sort()).toEqual([
+        'differential-equations',
+        'linear-algebra',
+        'multivariable-calculus',
+      ])
+    })
+
+    it('a year before a pinned first language course is not a gap', () => {
+      // Spanish 1 moves from freshman to sophomore year: Spanish 2 follows it
+      // into junior year, with electives shifting to make room.
+      const spanish = plan.placements.find((p) => p.courseId === 'spanish-1')!
+      const cascade = previewEdit(demo, student, plan, { kind: 'move', courseId: 'spanish-1', fromTerm: spanish.term, toTerm: spanish.term + 2 }, eng).cascade!
+      expect(cascade.validation.graduationPathValid).toBe(true)
+      expect(termOf(cascade.plan, 'spanish-2')).toBe(spanish.term + 4)
+      // A re-plan keeps everything it can where it was.
+      expect(cascade.changes.length).toBeLessThanOrEqual(4)
+    })
+
+    it('describes a proposal in the present and history in the past', () => {
+      expect(describeEdit(demo, edit, 'proposed')).toBe('Moving AP Precalculus to junior year')
+      expect(describeEdit(demo, edit)).toBe('Moved AP Precalculus to junior year')
+    })
+  })
+
+  it('a move into a full semester proposes the smallest swap', () => {
     const health = base.placements.find((p) => p.courseId === 'health')!
     const other = health.term === 2 ? 3 : 2
     const preview = previewEdit(demo, student, base, { kind: 'move', courseId: 'health', fromTerm: health.term, toTerm: other }, pr)
+    expect(preview.affected).toEqual([])
+    expect(preview.introduced.map((f) => f.code)).toEqual(['load-over'])
+    expect(preview.cascade!.validation.graduationPathValid).toBe(true)
+    // One semester course trades places with Health; nothing else moves.
+    expect(preview.cascade!.changes).toHaveLength(1)
+    expect(preview.cascade!.changes[0]).toMatchObject({ kind: 'move', fromTerm: other, toTerm: health.term })
+  })
+
+  it('a harmless move has no consequences', () => {
+    const health = base.placements.find((p) => p.courseId === 'health')!
+    const other = health.term === 2 ? 3 : 2
+    // Make room first, so the move itself breaks nothing.
+    const filler = base.placements.find((p) => {
+      const c = demo.courses.get(p.courseId)!
+      return p.status === 'planned' && p.term === other && c.durationTerms === 1 && c.satisfies.length === 0
+    })
+    expect(filler).toBeDefined()
+    const roomy = applyEdit(base, { kind: 'remove', courseId: filler!.courseId, term: filler!.term })
+    const preview = previewEdit(demo, student, roomy, { kind: 'move', courseId: 'health', fromTerm: health.term, toTerm: other }, pr)
+    expect(preview.introduced).toEqual([])
     expect(preview.affected).toEqual([])
     expect(preview.cascade).toBeNull()
   })
@@ -145,11 +218,23 @@ describe('what-if scenarios', () => {
     expect(result.status).toBe('valid')
   })
 
-  it('dropping a language the student still needs cannot produce a valid plan', () => {
+  it('dropping the planned language switches to another one the school offers', () => {
     const lang = current.placements.filter((p) => p.status === 'planned' && demo.courses.get(p.courseId)!.department === 'world-language')
     const result = runScenario(demo, student, pr, current, { kind: 'drop', courseIds: lang.map((p) => p.courseId) })
+    expect(result.status).toBe('valid')
+    const now = result.plan.placements.filter((p) => demo.courses.get(p.courseId)!.department === 'world-language')
+    expect(now.length).toBeGreaterThanOrEqual(2)
+    expect(now.some((p) => lang.some((l) => l.courseId === p.courseId))).toBe(false)
+    // Still one language, as the requirement asks.
+    expect(new Set(now.map((p) => demo.courses.get(p.courseId)!.sequence?.id)).size).toBe(1)
+  })
+
+  it('ruling out every language a student could start cannot produce a valid plan, and says why', () => {
+    const result = runScenario(demo, student, pr, current, { kind: 'drop', courseIds: ['spanish-1', 'french-1', 'chinese-1'] })
     expect(result.status).toBe('no-valid-schedule')
-    expect(result.problems.some((p) => p.requirementId === 'world-language')).toBe(true)
+    expect(result.problems.find((p) => p.requirementId === 'world-language')?.message).toBe(
+      "Compass couldn't fit World Language into your remaining terms: you still need 2 credits, and with Spanish 1, French 1, and Mandarin Chinese 1 left out, none of the courses that count can fit.",
+    )
   })
 
   it('changing priorities regenerates the plan and reports the workload difference', () => {
@@ -174,5 +259,17 @@ describe('what-if scenarios', () => {
 
   it('keeps a planned edit valid for the requirement tracker', () => {
     expect(planned('x', 0).status).toBe('planned')
+  })
+})
+
+describe('adjustment wording', () => {
+  it('keeps two list clauses apart with a comma', () => {
+    const plan = generateFor('geometry', prefs({ rigor: 'very-rigorous', goals: ['engineering', 'stem'] })).plan
+    const spanish = plan.placements.find((p) => p.courseId === 'spanish-1')!
+    const preview = previewEdit(demo, student, plan, { kind: 'remove', courseId: 'spanish-1', term: spanish.term }, prefs({ rigor: 'very-rigorous', goals: ['engineering', 'stem'] }))
+    expect(preview.cascade!.validation.graduationPathValid).toBe(true)
+    expect(preview.cascade!.summary).toBe(
+      'Also add French 1 in freshman year and French 2 in sophomore year, and drop Spanish 2, which can no longer fit before graduation',
+    )
   })
 })

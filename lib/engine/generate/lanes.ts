@@ -43,6 +43,10 @@ export interface Track {
 
 export const reasonKey = (courseId: string, term: TermIndex) => `${courseId}@${term}`
 
+/** Re-plan bonuses: staying in the same term, and staying in the plan at all. */
+export const ANCHOR_SAME_TERM = 8
+export const ANCHOR_KEPT = 4
+
 /**
  * One lane per category requirement, ordered so a lane comes after any lane
  * whose courses it depends on (science after math, because chemistry needs
@@ -147,6 +151,8 @@ export interface TrackSearch {
   strict: boolean
   beamWidth?: number
   keep?: number
+  /** Where courses sat in the plan being re-planned, by course. */
+  anchors?: Map<string, Set<TermIndex>>
 }
 
 /**
@@ -155,6 +161,22 @@ export interface TrackSearch {
  * courses). Hard constraints prune; preferences only rank.
  */
 export function enumerateTracks(search: TrackSearch): Track[] {
+  const { catalog, ctx, lane, model } = search
+  const laneSet = new Set(lane.courseIds)
+  const started = ctx.placements.some((p) => laneSet.has(p.courseId) && catalog.courses.get(p.courseId)?.sequence)
+  const order = lane.sameSequence && !started ? sequenceOrder(catalog, lane, model) : []
+  if (order.length === 0) return tracksFor(search, undefined)
+  // The student's language first, then the school's order: a sequence that
+  // can't be started (dropped, or no room left for it) hands over to the next,
+  // so a missing Spanish 1 never reads as "no language fits".
+  for (const id of order) {
+    const tracks = tracksFor(search, id)
+    if (tracks.length > 0) return tracks
+  }
+  return []
+}
+
+function tracksFor(search: TrackSearch, preferredSequence: string | undefined): Track[] {
   const { catalog, ctx, lane, model, startTerm } = search
   const maxLoad = catalog.school.load.max
   const beamWidth = search.beamWidth ?? 40
@@ -163,6 +185,9 @@ export function enumerateTracks(search: TrackSearch): Track[] {
   // Lane slots already held by history or pinned courses.
   const fixedTerms = new Set<TermIndex>()
   let sequence: SearchState['sequence']
+  // When the first fixed course of the sequence ends: a year before a pinned
+  // Spanish 1 is not a gap in the language.
+  let firstSequenceEnd = Infinity
   for (const p of ctx.placements) {
     if (!laneSet.has(p.courseId)) continue
     const course = catalog.courses.get(p.courseId)!
@@ -170,8 +195,8 @@ export function enumerateTracks(search: TrackSearch): Track[] {
     if (lane.sameSequence && course.sequence && (!sequence || course.sequence.step > sequence.step)) {
       sequence = { id: course.sequence.id, step: course.sequence.step }
     }
+    if (lane.sameSequence && course.sequence) firstSequenceEnd = Math.min(firstSequenceEnd, p.term + course.durationTerms - 1)
   }
-  const preferredSequence = lane.sameSequence && !sequence ? preferredSequenceId(catalog, lane, model) : undefined
 
   let states: SearchState[] = [
     {
@@ -263,6 +288,10 @@ export function enumerateTracks(search: TrackSearch): Track[] {
     } else if (freeFall || freeSpring) {
       const term = freeFall ? fall : spring
       for (const c of candidates(state, state.overlay, term, 1)) options.push([{ course: c, term }])
+      // A pinned semester course holds only half the year: a full-year course
+      // can still run alongside it (Discrete Math pinned in the fall doesn't
+      // shut AP Calculus BC out of senior year).
+      if (fall >= startTerm) for (const c of candidates(state, state.overlay, fall, 2)) options.push([{ course: c, term: fall }])
     }
     return options
   }
@@ -317,7 +346,8 @@ export function enumerateTracks(search: TrackSearch): Track[] {
     // A same-sequence lane that skips a year after starting is finished:
     // no language 3 after a gap year, no switching languages mid-way.
     const skipped = picks.length === 0 && (fall >= startTerm || spring >= startTerm) && !fixedTerms.has(fall)
-    const stopped = state.stopped || (lane.sameSequence && !!sequenceState && skipped)
+    const begun = firstSequenceEnd < fall || state.overlay.placements.length > 0
+    const stopped = state.stopped || (lane.sameSequence && !!sequenceState && skipped && begun)
     return {
       overlay,
       score,
@@ -421,6 +451,9 @@ export function enumerateTracks(search: TrackSearch): Track[] {
       reasons.push({ kind: 'target', text: `Leads to ${catalog.courses.get(target)?.name ?? target}, which you asked for.` })
     }
     if (model.avoid.has(course.id)) score -= 60
+    // In a re-plan, a course already in the plan stays if it can.
+    const was = search.anchors?.get(course.id)
+    if (was) score += was.has(term) ? ANCHOR_SAME_TERM : ANCHOR_KEPT
 
     // Keep terms at the student's chosen load where possible.
     for (const t of occupiedTerms(term, course.durationTerms)) {
@@ -455,14 +488,14 @@ function dedupe(states: SearchState[]): SearchState[] {
   return out
 }
 
-/** The language a student asked for, else the first sequence the school lists. */
-function preferredSequenceId(catalog: Catalog, lane: Lane, model: PreferenceModel): string | undefined {
+/** The language a student asked for first, then the sequences in the school's order. */
+function sequenceOrder(catalog: Catalog, lane: Lane, model: PreferenceModel): string[] {
   const sequences: string[] = []
   for (const course of catalog.school.courses) {
     if (lane.courseIds.includes(course.id) && course.sequence && !sequences.includes(course.sequence.id)) {
       sequences.push(course.sequence.id)
     }
   }
-  if (model.language && sequences.includes(model.language)) return model.language
-  return sequences[0]
+  if (model.language && sequences.includes(model.language)) return [model.language, ...sequences.filter((id) => id !== model.language)]
+  return sequences
 }

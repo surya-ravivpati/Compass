@@ -5,7 +5,7 @@ import { allocateRequirements } from '../requirements.ts'
 import { placementPhrase, termLabel, yearOfTerm } from '../terms.ts'
 import { TERM_COUNT, type Course, type TermIndex } from '../types.ts'
 import { emptyOverlay, infeasibility, type PlanningContext } from './context.ts'
-import { reasonKey, type PlacementReason } from './lanes.ts'
+import { ANCHOR_KEPT, ANCHOR_SAME_TERM, reasonKey, type PlacementReason } from './lanes.ts'
 import { interestScore, matchedGoals, rigorScore, workloadScore, type PreferenceModel } from './preferences.ts'
 
 export interface FillArgs {
@@ -19,6 +19,8 @@ export interface FillArgs {
   /** Departments whose courses were placed by lanes (the core pathways). */
   laneCourseIds: Set<string>
   reasons: Map<string, PlacementReason[]>
+  /** Where courses sat in the plan being re-planned, by course. */
+  anchors?: Map<string, Set<TermIndex>>
 }
 
 export interface FillResult {
@@ -216,6 +218,9 @@ export function fillElectives(args: FillArgs): FillResult {
     if (model.targets.has(course.id)) s += 60
     else if ([...model.targets].some((t) => ancestors(catalog, t).has(course.id))) s += 10
     if (model.avoid.has(course.id)) s -= 60
+    // In a re-plan, a course already in the plan stays if it can.
+    const was = args.anchors?.get(course.id)
+    if (was) s += was.has(term) ? ANCHOR_SAME_TERM : ANCHOR_KEPT
     return s
   }
 

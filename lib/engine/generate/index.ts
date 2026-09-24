@@ -31,6 +31,11 @@ export interface GenerateInput {
   exclude?: string[]
   /** Courses the plan must include. */
   require?: string[]
+  /**
+   * The plan being re-planned. Its courses score a bonus for staying where
+   * they were, so a re-plan changes as little as it can.
+   */
+  anchors?: Placement[]
 }
 
 export type StageId = 'requirements' | 'prerequisites' | 'availability' | 'preferences' | 'validation'
@@ -78,6 +83,10 @@ export function generatePlan(input: GenerateInput): GenerateResult {
   const model = buildPreferenceModel(prefs, catalog.school)
   const excluded = new Set([...(input.exclude ?? [])].filter((id) => !required.includes(id)))
   const fixed = [...input.history, ...pins]
+  const anchors = new Map<string, Set<number>>()
+  for (const p of input.anchors ?? []) {
+    if (p.status === 'planned') anchors.set(p.courseId, new Set([...(anchors.get(p.courseId) ?? []), p.term]))
+  }
   const stages: GenerationStage[] = []
 
   // Stage 1: requirements.
@@ -146,6 +155,7 @@ export function generatePlan(input: GenerateInput): GenerateResult {
       required,
       laneCourseIds,
       reasons: allReasons,
+      anchors,
     })
     const plan: Plan = { placements: sortPlacements(filled.placements) }
     const validation = validatePlan(catalog, student, plan, prefs)
@@ -173,7 +183,7 @@ export function generatePlan(input: GenerateInput): GenerateResult {
     if (attempts >= MAX_FULL_ATTEMPTS || trackSearches >= MAX_TRACK_SEARCHES) return null
     const lane = lanes[index]!
     trackSearches++
-    const base = { catalog, ctx, lane, model, startTerm: student.startTerm, excluded, required: new Set(required) }
+    const base = { catalog, ctx, lane, model, startTerm: student.startTerm, excluded, required: new Set(required), anchors }
     let tracks: Track[] = enumerateTracks({ ...base, strict: true })
     if (tracks.length === 0 && lane.everyTerm) tracks = enumerateTracks({ ...base, strict: false })
     tracksEvaluated += tracks.length
@@ -219,7 +229,7 @@ export function generatePlan(input: GenerateInput): GenerateResult {
     } courses placed · ${errors.length === 0 ? 'no conflicts' : `${errors.length} conflict${errors.length === 1 ? '' : 's'}`}`,
   })
 
-  const problems: Finding[] = found ? [] : [...laneProblems(laneFailures), ...errors]
+  const problems: Finding[] = found ? [] : [...laneProblems(catalog, laneFailures, excluded), ...errors]
   return {
     status: found ? 'valid' : 'no-valid-schedule',
     plan: result.plan,
@@ -237,23 +247,30 @@ function rankAttempt(v: ValidationReport): number {
   return errors * 1000 + warnings
 }
 
-function laneProblems(failures: Map<string, Lane>): Finding[] {
-  return [...failures.values()].map((lane) => ({
-    id: `lane-unsatisfiable:${lane.id}`,
-    check: 'requirements' as const,
-    code: 'lane-unsatisfiable',
-    severity: 'error' as const,
-    requirementId: lane.id,
-    message:
-      lane.missingGroups.length > 0
-        ? `Compass couldn't fit ${lane.requirement.name} into your remaining terms: it still needs ${lane.missingGroups
-            .map((g) => g.label)
-            .join(', ')}, and the courses that count aren't open to you in the terms left.`
-        : lane.deficit > 0
-          ? `Compass couldn't fit ${lane.requirement.name} into your remaining terms: you still need ${fmt(lane.deficit)} credit${lane.deficit === 1 ? '' : 's'}, and there aren't enough open terms for them alongside your other requirements.`
-          : `Compass couldn't fit ${lane.requirement.name} into your remaining terms alongside your other courses without breaking a prerequisite, grade, or season rule.`,
-    source: lane.requirement.source,
-  }))
+function laneProblems(catalog: Catalog, failures: Map<string, Lane>, excluded: Set<string>): Finding[] {
+  return [...failures.values()].map((lane) => {
+    // Courses the student ruled out are the likelier cause than a lack of room.
+    const ruledOut = [...excluded].filter((id) => lane.courseIds.includes(id)).map((id) => catalog.courses.get(id)?.name ?? id)
+    const need = `you still need ${fmt(lane.deficit)} credit${lane.deficit === 1 ? '' : 's'}`
+    return {
+      id: `lane-unsatisfiable:${lane.id}`,
+      check: 'requirements' as const,
+      code: 'lane-unsatisfiable',
+      severity: 'error' as const,
+      requirementId: lane.id,
+      message:
+        lane.missingGroups.length > 0
+          ? `Compass couldn't fit ${lane.requirement.name} into your remaining terms: it still needs ${lane.missingGroups
+              .map((g) => g.label)
+              .join(', ')}, and the courses that count aren't open to you in the terms left.`
+          : lane.deficit > 0 && ruledOut.length > 0
+            ? `Compass couldn't fit ${lane.requirement.name} into your remaining terms: ${need}, and with ${joinAnd(ruledOut)} left out, none of the courses that count can fit.`
+            : lane.deficit > 0
+              ? `Compass couldn't fit ${lane.requirement.name} into your remaining terms: ${need}, and there aren't enough open terms for them alongside your other requirements.`
+              : `Compass couldn't fit ${lane.requirement.name} into your remaining terms alongside your other courses without breaking a prerequisite, grade, or season rule.`,
+      source: lane.requirement.source,
+    }
+  })
 }
 
 function dedupeFindings(findings: Finding[]): Finding[] {

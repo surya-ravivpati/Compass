@@ -117,10 +117,13 @@ describe('AI tools', () => {
     expect(out.facts).toEqual([])
   })
 
-  it('compares dropping a needed language without ranking it', () => {
+  it('compares dropping a language without ranking it', () => {
     const out = executeTool(tools, 'compare_scenario', { kind: 'drop', course: 'Spanish 1' })
-    expect(out.result.valid_schedule_exists).toBe(false)
-    expect(String(out.result.problems)).toMatch(/World Language/)
+    // Another language the school offers still covers the requirement.
+    expect(out.result.valid_schedule_exists).toBe(true)
+    expect(out.result.courses_removed).toContain('Spanish 1')
+    expect(String(out.result.courses_added)).toMatch(/French 1|Mandarin Chinese 1/)
+    expect(JSON.stringify(out.result)).not.toMatch(/\b(better|best|worse|recommend)\b/i)
     expect(out.proposal).toMatchObject({ kind: 'scenario' })
   })
 

@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import type { Route } from 'next'
-import { courseName, joinAnd, type Catalog, type EditPreview } from '@/lib/engine'
+import { courseName, describeEdit, joinAnd, type Catalog, type EditPreview } from '@/lib/engine'
 import { IconAlert, IconBranch, IconCheckCircle } from '@/components/ui/icons'
 
 /**
@@ -26,13 +26,16 @@ export function PendingBar({
 }) {
   const affectedNames = [...new Set(preview.affected.map((a) => courseName(catalog, a.courseId)))]
   const clean = preview.introduced.length === 0
+  const change = describeEdit(catalog, preview.edit, 'proposed')
   const headline = clean
-    ? `${preview.summary}: no conflicts.`
+    ? `${change}: no conflicts.`
     : affectedNames.length
-      ? `${preview.summary} affects ${joinAnd(affectedNames)}.`
-      : `${preview.summary} creates ${preview.introduced.length === 1 ? 'a conflict' : `${preview.introduced.length} conflicts`}.`
+      ? `${change} affects ${joinAnd(affectedNames)}.`
+      : `${change} creates ${preview.introduced.length === 1 ? 'a conflict' : `${preview.introduced.length} conflicts`}.`
   const messages = preview.introduced.slice(0, 3).map((f) => f.message)
   const more = preview.introduced.length - messages.length
+  // An adjustment that can't fix everything says so instead of implying it does.
+  const leftover = preview.cascade?.validation.findings.filter((f) => f.severity === 'error') ?? []
   const edit = preview.edit
   const exploreHref =
     edit.kind === 'move'
@@ -55,6 +58,13 @@ export function PendingBar({
           ))}
           {more > 0 ? <p className="text-fog">And {more} more.</p> : null}
           {preview.cascade ? <p className="text-ink">Possible adjustment: {preview.cascade.summary}.</p> : null}
+          {preview.cascade && leftover.length > 0 ? (
+            <p className="text-warn">
+              {leftover.length === 1
+                ? `Even with it, one problem is left: ${leftover[0]!.message}`
+                : `Even with it, ${leftover.length} problems are left, including: ${leftover[0]!.message}`}
+            </p>
+          ) : null}
         </div>
         <div className="mt-4 flex flex-wrap gap-2 pl-7">
           {preview.cascade ? (

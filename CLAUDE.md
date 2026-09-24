@@ -116,8 +116,10 @@ Breaking one of these is a bug even if the tests pass.
   SHA-256 of the token stored.
 - **The generator is lane-based search with backtracking**, then elective fill, then
   the same validator the UI uses. Deterministic; bounded; explains every placement.
-- **Edits propose a re-plan that keeps the student's edit** (`replanAround`), falling
-  back to shifting dependents later.
+- **Edits propose a re-plan that keeps the student's edit** (`replanAround`),
+  widening from the broken courses to their subjects' pathways, then falling back
+  to shifting dependents later. A proposal that can't fix everything says what it
+  leaves, and one that doesn't reduce the problems isn't offered.
 - **Plans are versioned**; restoring appends a copy. Alternatives are separate plans.
 - **Compass AI uses function calling** over engine tools, echoing model turns
   verbatim so Gemini thought signatures survive.

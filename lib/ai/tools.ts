@@ -384,6 +384,10 @@ function previewMove(ctx: ToolContext, course: Course, rawTerm: unknown): ToolRe
       resolves: preview.resolved.map((f) => f.message),
       other_courses_affected: preview.affected.map((a) => a.message),
       proposed_adjustment: preview.cascade?.summary ?? null,
+      plan_valid_with_adjustment: preview.cascade ? preview.cascade.validation.graduationPathValid : null,
+      problems_left_after_adjustment: preview.cascade
+        ? preview.cascade.validation.findings.filter((f) => f.severity === 'error').map((f) => f.message)
+        : [],
       plan_valid_after_change: preview.after.graduationPathValid,
       note: 'Nothing has changed. The student can open this preview in their plan.',
     },
