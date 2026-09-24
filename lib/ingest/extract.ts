@@ -19,6 +19,7 @@ const PROMPT = [
   'quote: the exact words describing the course, at most 300 characters.',
   'page: the number in the "=== Page N ===" marker above the course.',
   'Also list any graduation requirements the pages state (subject, credits, the exact wording).',
+  'Skip tables of contents and course lists or indexes that only give names, codes and page numbers: record a course from the page that describes it.',
 ].join('\n')
 
 const SCHEMA: Schema = {
@@ -63,16 +64,41 @@ const SCHEMA: Schema = {
   required: ['courses', 'requirements'],
 }
 
+/** What the model read, page by page, before any merging. Kept so a merge can be redone without the model. */
+export interface CatalogReading {
+  document: string
+  extractedAt: string
+  model: string
+  pages: number
+  raw: RawCourse[]
+  requirements: DraftRequirement[]
+}
+
+type ReadOptions = ClientOptions & { pagesPerChunk?: number; onProgress?: (done: number, total: number) => void }
+
 /**
- * Reads course records out of catalog pages with Gemini, a few pages at a
- * time, then merges them deterministically. The result is a draft for human
- * review -- it is never loaded directly.
+ * Reads course records out of catalog pages with Gemini, then merges them
+ * deterministically. The result is a draft for human review -- it is never
+ * loaded directly.
  */
-export async function extractCatalog(
-  pages: string[],
-  document: string,
-  options: ClientOptions & { pagesPerChunk?: number; onProgress?: (done: number, total: number) => void } = {},
-): Promise<DraftCatalog> {
+export async function extractCatalog(pages: string[], document: string, options: ReadOptions = {}): Promise<DraftCatalog> {
+  return draftFromReading(await readCatalog(pages, document, options))
+}
+
+/** The deterministic half: one draft per course from everything the model read. */
+export function draftFromReading(reading: CatalogReading): DraftCatalog {
+  return {
+    document: reading.document,
+    extractedAt: reading.extractedAt,
+    model: reading.model,
+    pages: reading.pages,
+    courses: mergeRawCourses(reading.raw, reading.document),
+    requirements: reading.requirements,
+  }
+}
+
+/** The model half: course records exactly as read, a few pages at a time. */
+export async function readCatalog(pages: string[], document: string, options: ReadOptions = {}): Promise<CatalogReading> {
   const size = options.pagesPerChunk ?? 3
   const raw: RawCourse[] = []
   const requirements: DraftRequirement[] = []
@@ -106,14 +132,7 @@ export async function extractCatalog(
     await read(start, Math.min(size, pages.length - start))
     options.onProgress?.(c + 1, chunks)
   }
-  return {
-    document,
-    extractedAt: new Date().toISOString(),
-    model: options.model ?? aiModel(),
-    pages: pages.length,
-    courses: mergeRawCourses(raw, document),
-    requirements,
-  }
+  return { document, extractedAt: new Date().toISOString(), model: options.model ?? aiModel(), pages: pages.length, raw, requirements }
 }
 
 async function withRetry<T>(fn: () => Promise<T>, attempts = 3): Promise<T> {

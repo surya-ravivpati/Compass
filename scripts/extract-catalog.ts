@@ -2,36 +2,52 @@
  * Step 1 of the catalog pipeline: read a course-catalog PDF into a draft.
  *
  *   npm run catalog:extract -- catalog-sources/coursed.pdf --school my-school
+ *   npm run catalog:extract -- --school my-school --remerge
  *
- * Writes data/catalogs/<school>/extracted.json and REVIEW.md, plus an
- * overrides.template.json to fill in. Needs GEMINI_API_KEY.
+ * Writes data/catalogs/<school>/raw.json (what the model read, page by page),
+ * extracted.json and REVIEW.md, plus an overrides.template.json to fill in.
+ * Needs GEMINI_API_KEY. --remerge rebuilds the draft from raw.json without
+ * calling the model, after a change to the merge rules.
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
-import { extractCatalog, extractPdfPages } from '../lib/ingest/extract.ts'
+import { draftFromReading, extractPdfPages, readCatalog, type CatalogReading } from '../lib/ingest/extract.ts'
 import type { CatalogOverrides } from '../lib/ingest/types.ts'
 
 const args = process.argv.slice(2)
-const pdf = args.find((a) => !a.startsWith('--'))
-const school = args[args.indexOf('--school') + 1]
-if (!pdf || !school || args.indexOf('--school') < 0) {
-  console.error('Usage: npm run catalog:extract -- <catalog.pdf> --school <school-id>')
-  process.exit(1)
-}
-if (!process.env.GEMINI_API_KEY) {
-  console.error('GEMINI_API_KEY is not set. Extraction reads the PDF with Gemini; add the key to .env.local.')
+const remerge = args.includes('--remerge')
+const school = args.indexOf('--school') >= 0 ? args[args.indexOf('--school') + 1] : undefined
+const pdf = args.find((a, i) => !a.startsWith('--') && args[i - 1] !== '--school')
+if (!school || (!pdf && !remerge)) {
+  console.error('Usage: npm run catalog:extract -- <catalog.pdf> --school <school-id>   (or --school <school-id> --remerge)')
   process.exit(1)
 }
 
 const out = path.join('data', 'catalogs', school)
-mkdirSync(out, { recursive: true })
-const bytes = new Uint8Array(readFileSync(pdf))
-const pages = await extractPdfPages(bytes)
-console.log(`Read ${pages.length} pages from ${pdf}.`)
-const draft = await extractCatalog(pages, path.basename(pdf), {
-  onProgress: (done, total) => process.stdout.write(`\rExtracting… ${done}/${total}`),
-})
-process.stdout.write('\n')
+const rawPath = path.join(out, 'raw.json')
+let reading: CatalogReading
+if (remerge) {
+  if (!existsSync(rawPath)) {
+    console.error(`${rawPath} doesn't exist yet. Run the extraction with the PDF first.`)
+    process.exit(1)
+  }
+  reading = JSON.parse(readFileSync(rawPath, 'utf8')) as CatalogReading
+  console.log(`Re-merging ${reading.raw.length} records read from ${reading.document} (no model calls).`)
+} else {
+  if (!process.env.GEMINI_API_KEY) {
+    console.error('GEMINI_API_KEY is not set. Extraction reads the PDF with Gemini; add the key to .env.local.')
+    process.exit(1)
+  }
+  mkdirSync(out, { recursive: true })
+  const pages = await extractPdfPages(new Uint8Array(readFileSync(pdf!)))
+  console.log(`Read ${pages.length} pages from ${pdf}.`)
+  reading = await readCatalog(pages, path.basename(pdf!), {
+    onProgress: (done, total) => process.stdout.write(`\rExtracting… ${done}/${total}`),
+  })
+  process.stdout.write('\n')
+  writeFileSync(rawPath, JSON.stringify(reading, null, 1) + '\n')
+}
+const draft = draftFromReading(reading)
 writeFileSync(path.join(out, 'extracted.json'), JSON.stringify(draft, null, 2) + '\n')
 
 const flagged = draft.courses.filter((c) => c.flags.length)
@@ -65,4 +81,4 @@ if (!existsSync(overridesPath)) {
   writeFileSync(path.join(out, 'overrides.template.json'), JSON.stringify(template, null, 2) + '\n')
   console.log(`Wrote ${path.join(out, 'overrides.template.json')}. Fill it in and save it as overrides.json.`)
 }
-console.log(`Wrote ${path.join(out, 'extracted.json')} and ${path.join(out, 'REVIEW.md')}.`)
+console.log(`Wrote ${path.join(out, 'extracted.json')} and ${path.join(out, 'REVIEW.md')}: ${draft.courses.length} courses, ${flagged.length} to review.`)

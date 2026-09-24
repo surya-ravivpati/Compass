@@ -19,10 +19,16 @@ states** for each course — name, code, department, description, credits,
 semester or full year, grades, prerequisites as named, notes — plus the exact
 quote and page number. Anything not stated is `null`. It writes:
 
-- `extracted.json` — the draft, every course with `source: { document, page, quote }`
+- `raw.json` — every record exactly as the model read it, page by page
+- `extracted.json` — the draft, every course with `source: { document, page, quote }`.
+  Records that share a course code are one course; the same name under different
+  codes stays two courses
 - `REVIEW.md` — every course with missing fields, conflicts between pages, or
   prerequisite wording that isn't a list of courses
 - `overrides.template.json` — a starting point for step 2
+
+After a change to the merge rules, rebuild the draft from `raw.json` without
+calling the model: `npm run catalog:extract -- --school my-school --remerge`.
 
 ## 2. Review and fill in overrides.json
 

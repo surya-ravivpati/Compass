@@ -34,16 +34,39 @@ export function normalizeName(name: string): string {
 const GRADES = new Set([9, 10, 11, 12])
 
 /**
+ * The course codes in a code field, normalized, so "ART101–Semester 1
+ * ART102–Semester 2", "ART101/ART102" and "ART101 —" all read the same.
+ */
+export function courseCodes(code: string | null | undefined): string[] {
+  if (!code) return []
+  const tokens = code
+    .toUpperCase()
+    .replace(/([A-Z]{2,})\s+(\d{2,})/g, '$1$2')
+    .split(/[\s,;/|–—-]+/)
+    .filter((t) => t.length >= 3 && /\d/.test(t) && /^[A-Z0-9.]+$/.test(t))
+  return [...new Set(tokens)]
+}
+
+/**
  * Merges what the model read from each page into one draft per course. Keeps
  * the first page's source, fills gaps from later pages, and flags any field
  * two pages disagree on instead of choosing silently.
+ *
+ * A shared course code makes two records one course, whatever their names.
+ * Without codes the name decides, but the same name under different codes is
+ * a different course (an English and a social studies "American Studies").
  */
 export function mergeRawCourses(raw: RawCourse[], document: string): DraftCourse[] {
-  const byName = new Map<string, DraftCourse>()
+  const drafts: DraftCourse[] = []
+  const byName = new Map<string, DraftCourse[]>()
+  const byCode = new Map<string, DraftCourse>()
+  const codesOf = new Map<DraftCourse, Set<string>>()
+  const ids = new Set<string>()
   for (const r of raw) {
     const name = r.name?.trim()
     if (!name) continue
     const key = normalizeName(name)
+    const codes = courseCodes(r.code)
     const grades = (r.grades ?? []).filter((g): g is GradeLevel => GRADES.has(g))
     const seasons = (r.semesters ?? [])
       .map((s) => s.toLowerCase())
@@ -51,7 +74,7 @@ export function mergeRawCourses(raw: RawCourse[], document: string): DraftCourse
     const incoming: DraftCourse = {
       id: slugify(name),
       name,
-      code: r.code?.trim() || null,
+      code: codes.length ? codes.join(' ') : r.code?.trim() || null,
       department: r.department?.trim() || null,
       description: r.description?.trim() || null,
       credits: typeof r.credits === 'number' && r.credits > 0 ? r.credits : null,
@@ -65,12 +88,25 @@ export function mergeRawCourses(raw: RawCourse[], document: string): DraftCourse
       flags: [],
     }
     if (incoming.prerequisites && incoming.prerequisites.length === 0) incoming.prerequisites = null
-    const existing = byName.get(key)
+    const named = byName.get(key) ?? []
+    const sameName = named.filter((d) => codes.length === 0 || codesOf.get(d)!.size === 0 || codes.some((c) => codesOf.get(d)!.has(c)))
+    const existing = codes.map((c) => byCode.get(c)).find((d) => d !== undefined) ?? sameName[0]
     if (!existing) {
-      byName.set(key, incoming)
+      let id = incoming.id
+      if (ids.has(id) && codes[0]) id = `${incoming.id}-${codes[0].toLowerCase()}`
+      for (let n = 2; ids.has(id); n++) id = `${incoming.id}-${n}`
+      ids.add(id)
+      incoming.id = id
+      drafts.push(incoming)
+      byName.set(key, [...named, incoming])
+      codesOf.set(incoming, new Set(codes))
+      for (const c of codes) byCode.set(c, incoming)
       continue
     }
-    for (const field of ['code', 'department', 'description', 'credits', 'length', 'grades', 'seasons', 'prerequisites', 'prerequisiteText'] as const) {
+    if (codes.length === 0 && sameName.length > 1) {
+      existing.flags.push(`Page ${r.page} names "${name}" without a code, and ${sameName.length} courses share that name: check which one it means`)
+    }
+    for (const field of ['department', 'description', 'credits', 'length', 'grades', 'seasons', 'prerequisites', 'prerequisiteText'] as const) {
       const a = existing[field]
       const b = incoming[field]
       if (a === null && b !== null) {
@@ -79,9 +115,16 @@ export function mergeRawCourses(raw: RawCourse[], document: string): DraftCourse
         existing.flags.push(`${field} differs between page ${existing.source.page} (${JSON.stringify(a)}) and page ${r.page} (${JSON.stringify(b)})`)
       }
     }
+    const theirs = codesOf.get(existing)!
+    for (const c of codes) {
+      theirs.add(c)
+      if (!byCode.has(c)) byCode.set(c, existing)
+    }
+    if (theirs.size) existing.code = [...theirs].join(' ')
+    else if (existing.code === null) existing.code = incoming.code
+    if (!named.includes(existing)) byName.set(key, [...named, existing])
     existing.notes = [...new Set([...existing.notes, ...incoming.notes])]
   }
-  const drafts = [...byName.values()]
   for (const d of drafts) {
     if (d.credits === null) d.flags.push('Credits not stated')
     if (d.length === null) d.flags.push('Not stated whether it is a semester or full-year course')

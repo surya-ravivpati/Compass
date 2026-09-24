@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { buildSchool } from '../../lib/ingest/build.ts'
 import { extractCatalog, extractPdfPages } from '../../lib/ingest/extract.ts'
-import { mergeRawCourses } from '../../lib/ingest/normalize.ts'
+import { courseCodes, mergeRawCourses } from '../../lib/ingest/normalize.ts'
 import type { CatalogOverrides, DraftCatalog } from '../../lib/ingest/types.ts'
 import { buildCatalog, generatePlan, DEFAULT_PREFERENCES } from '../../lib/engine/index.ts'
 
@@ -48,6 +48,43 @@ describe('draft merging', () => {
     expect(chem.source).toEqual({ kind: 'catalog', document: DOC, page: 5 })
     expect(chem.flags).toContain('credits differs between page 5 (1) and page 9 (0.5)')
     expect(chem.flags).toContain('Grade levels not stated')
+  })
+
+  it('reads course codes in their usual spellings', () => {
+    expect(courseCodes('ART101–Semester 1 ART102–Semester 2')).toEqual(['ART101', 'ART102'])
+    expect(courseCodes('SPA511/SPA512')).toEqual(['SPA511', 'SPA512'])
+    expect(courseCodes('— BUS252')).toEqual(['BUS252'])
+    expect(courseCodes('MATH 101, MATH 102')).toEqual(['MATH101', 'MATH102'])
+    expect(courseCodes(null)).toEqual([])
+  })
+
+  it('treats records that share a course code as one course, whatever their names', () => {
+    const merged = mergeRawCourses(
+      [
+        { name: 'Art and Design', code: 'ART101–Semester 1 ART102–Semester 2', length: 'semester', grades: [9, 10, 11, 12], page: 48 },
+        { name: 'ART AND DESIGN (CP)', code: 'ART101 ART102', department: 'ART', page: 115 },
+      ],
+      DOC,
+    )
+    expect(merged).toHaveLength(1)
+    expect(merged[0]).toMatchObject({ id: 'art-and-design', code: 'ART101 ART102', length: 'semester', department: 'ART' })
+    expect(merged[0]!.flags.some((f) => f.startsWith('code differs'))).toBe(false)
+  })
+
+  it('keeps same-named courses with different codes apart, and flags a mention that could be either', () => {
+    const merged = mergeRawCourses(
+      [
+        { name: 'American Studies', code: 'ENG341/ENG342', department: 'English', page: 30 },
+        { name: 'American Studies', code: 'SOC581/SOC582', department: 'Social Studies', page: 101 },
+        { name: 'American Studies', page: 117 },
+      ],
+      DOC,
+    )
+    expect(merged.map((c) => [c.id, c.code, c.department])).toEqual([
+      ['american-studies', 'ENG341 ENG342', 'English'],
+      ['american-studies-soc581', 'SOC581 SOC582', 'Social Studies'],
+    ])
+    expect(merged[0]!.flags).toContain('Page 117 names "American Studies" without a code, and 2 courses share that name: check which one it means')
   })
 })
 
