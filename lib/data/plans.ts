@@ -40,8 +40,10 @@ export interface NewVersion {
 }
 
 export class PlanConflictError extends Error {
-  constructor(public readonly latest: number) {
+  readonly latest: number
+  constructor(latest: number) {
     super('This plan changed somewhere else (another tab or device). Reload to see the latest version.')
+    this.latest = latest
   }
 }
 

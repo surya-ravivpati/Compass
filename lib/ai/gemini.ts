@@ -62,13 +62,15 @@ export interface GenerateResponse {
 
 export type AiErrorKind = 'not-configured' | 'http' | 'timeout' | 'blocked' | 'empty' | 'incomplete' | 'network'
 
+// Plain fields, not parameter properties: the npm scripts run this file with
+// Node's type stripping, which only accepts erasable syntax.
 export class AiError extends Error {
-  constructor(
-    public readonly kind: AiErrorKind,
-    message: string,
-    public readonly status?: number,
-  ) {
+  readonly kind: AiErrorKind
+  readonly status: number | undefined
+  constructor(kind: AiErrorKind, message: string, status?: number) {
     super(message)
+    this.kind = kind
+    this.status = status
   }
 }
 
