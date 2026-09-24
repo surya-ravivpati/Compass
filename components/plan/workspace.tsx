@@ -30,6 +30,7 @@ import { HistoryDialog, type VersionItem } from './history-dialog'
 import { Inspector } from './inspector'
 import { PendingBar } from './pending-bar'
 import { PlanList } from './plan-list'
+import { PlanComparisonView } from './plan-comparison'
 import { PlanStatus } from './plan-status'
 
 interface PlanSummaryItem {
@@ -53,6 +54,8 @@ export interface WorkspaceProps {
   initialSelected?: string | null
   /** A move proposed elsewhere (Compass AI): staged for review, never applied on load. */
   initialPreview?: { courseId: string; toTerm: number } | null
+  /** When viewing an alternative: the primary plan, for comparison. */
+  primary?: { name: string; placements: Placement[] } | null
 }
 
 type Toast = { message: string; undo?: () => void; tone?: 'error' }
@@ -75,6 +78,7 @@ export function PlanWorkspace(props: WorkspaceProps) {
   const [historyOpen, setHistoryOpen] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
   const [sheetOpen, setSheetOpen] = useState(false)
+  const [compareOpen, setCompareOpen] = useState(false)
   const [busy, startTransition] = useTransition()
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -325,6 +329,11 @@ export function PlanWorkspace(props: WorkspaceProps) {
           </form>
           {props.planKind === 'alternative' ? (
             <>
+              {props.primary ? (
+                <button type="button" className="btn btn-ghost btn-sm" onClick={() => setCompareOpen(true)}>
+                  Compare with primary
+                </button>
+              ) : null}
               <form action={() => makePrimaryAction(props.planId)}>
                 <button type="submit" className="btn btn-quiet btn-sm">
                   Make primary
@@ -401,6 +410,12 @@ export function PlanWorkspace(props: WorkspaceProps) {
       <Dialog open={narrow && sheetOpen && !!selected} onClose={() => setSheetOpen(false)} title="Course details">
         {narrow && sheetOpen ? inspector : null}
       </Dialog>
+
+      {props.primary ? (
+        <Dialog open={compareOpen} onClose={() => setCompareOpen(false)} title={`${props.planName} compared with ${props.primary.name}`} description="What this alternative changes. Compass shows the differences; it doesn’t rank them." wide>
+          <PlanComparisonView catalog={catalog} startTerm={props.startTerm} preferences={props.preferences} primary={props.primary.placements} alternative={placements} />
+        </Dialog>
+      ) : null}
 
       <AddCourseDialog open={addOpen} onClose={() => setAddOpen(false)} catalog={catalog} startTerm={props.startTerm} placements={placements} onEdit={requestEdit} />
       <HistoryDialog

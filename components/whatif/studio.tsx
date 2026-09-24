@@ -130,6 +130,18 @@ export function WhatIfStudio({
     })
   }
 
+  // A scenario opened from a link (the plan's pending bar, Compass AI) runs
+  // straight away. It's read-only: nothing changes until the student applies it.
+  const [autoRan, setAutoRan] = useState(false)
+  if (!autoRan && initial.kind && scenario && !result) {
+    setAutoRan(true)
+    try {
+      setResult(runScenario(catalog, student, preferences, plan, scenario))
+    } catch {
+      setMessage('Compass couldn’t evaluate this scenario right now. Your plan has not been modified.')
+    }
+  }
+
   const apply = () => {
     if (!result) return
     startTransition(async () => {

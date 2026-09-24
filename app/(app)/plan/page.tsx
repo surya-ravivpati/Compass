@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { getDb } from '@/lib/db/client'
-import { listVersions } from '@/lib/data/plans'
+import { getLatestVersion, listVersions } from '@/lib/data/plans'
 import { loadWorkspace } from '@/lib/workspace'
 import { PlanWorkspace } from '@/components/plan/workspace'
 
@@ -14,6 +14,11 @@ export default async function PlanPage(props: PageProps<'/plan'>) {
   const ws = await loadWorkspace(planId)
   const db = await getDb()
   const versions = await listVersions(db, ws.viewer.student.id, ws.plan.id)
+  const primaryId = ws.plans.find((p) => p.kind === 'primary')?.id
+  const primaryVersion = ws.plan.kind === 'alternative' && primaryId ? await getLatestVersion(db, ws.viewer.student.id, primaryId) : null
+  const primary = primaryVersion
+    ? { name: ws.plans.find((p) => p.id === primaryId)!.name, placements: [...ws.history, ...primaryVersion.placements] }
+    : null
   const initial = course ? ws.plan.placements.find((p) => p.courseId === course) : undefined
   return (
     <main className="mx-auto max-w-[1600px] px-4 py-6 md:px-6 md:py-8">
@@ -32,6 +37,7 @@ export default async function PlanPage(props: PageProps<'/plan'>) {
         versions={versions.map((v) => ({ id: v.id, version: v.version, summary: v.summary, createdAt: v.createdAt.toISOString(), validationStatus: v.validationStatus }))}
         initialSelected={initial ? `${initial.courseId}@${initial.term}` : null}
         initialPreview={course && moveTo !== null ? { courseId: course, toTerm: moveTo } : null}
+        primary={primary}
       />
     </main>
   )

@@ -156,6 +156,12 @@ export function CatalogBrowser({
                               {LEVELS.find((l) => l.id === c.level)?.label} · {c.durationTerms === 2 ? 'Full year' : `Semester (${c.seasons.join(' or ')})`} · {c.credits} cr
                               {c.prerequisites.length ? ` · Needs ${c.prerequisites.map((g) => describeGroup(catalog, g)).join('; ')}` : ''}
                             </span>
+                            <span className="mt-0.5 block truncate text-[12px] text-fog/80">
+                              {(catalog.dependents.get(c.id) ?? []).length
+                                ? `Opens → ${(catalog.dependents.get(c.id) ?? []).map((id) => catalog.courses.get(id)!.name).slice(0, 3).join(', ')}${(catalog.dependents.get(c.id) ?? []).length > 3 ? '…' : ''} · `
+                                : ''}
+                              Counts toward {c.satisfies.length ? c.satisfies.map((id) => catalog.requirements.get(id)?.name).join(', ') : 'Electives'}
+                            </span>
                           </span>
                           <span className={`text-[12.5px] md:text-right ${state === 'planned' || state === 'completed' || state === 'in-progress' ? 'text-signal-hi' : state === 'unreachable' || state === 'covered' ? 'text-fog' : 'text-mist'}`}>
                             {status.labels.get(c.id)}

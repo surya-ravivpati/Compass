@@ -23,7 +23,7 @@ export function RouteField() {
   ]
   return (
     <svg
-      className="pointer-events-none absolute inset-0 h-full w-full"
+      className="pointer-events-none absolute inset-0 h-full w-full opacity-45 md:opacity-100"
       viewBox="0 0 1440 780"
       preserveAspectRatio="xMidYMid slice"
       aria-hidden="true"

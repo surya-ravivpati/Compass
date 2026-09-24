@@ -4,7 +4,7 @@ import { academicYearLabel, whereNow } from '@/lib/calendar'
 import { getDb } from '@/lib/db/client'
 import { listVersions } from '@/lib/data/plans'
 import { coursesInTerm, planInsights } from '@/lib/insights'
-import { termLabel } from '@/lib/engine'
+import { termLabel, YEAR_NAMES } from '@/lib/engine'
 import { loadWorkspace } from '@/lib/workspace'
 import { PlanOverview } from '@/components/plan/plan-overview'
 import { PlanStatus } from '@/components/plan/plan-status'
@@ -30,7 +30,7 @@ export default async function HomePage() {
   const attention = validation.findings.filter((f) => f.severity !== 'info').slice(0, 4)
 
   return (
-    <main className="mx-auto max-w-[1200px] px-5 py-8 md:px-8 md:py-10">
+    <main className="mx-auto flex max-w-[1200px] flex-col px-5 py-8 md:px-8 md:py-10">
       <header className="animate-rise">
         <p className="eyebrow">
           {ws.school.name}
@@ -57,7 +57,7 @@ export default async function HomePage() {
         />
       </section>
 
-      <section aria-labelledby="overview-title" className="mt-8">
+      <section aria-labelledby="overview-title" className="order-last mt-8 lg:order-none">
         <div className="flex items-end justify-between gap-4">
           <div>
             <h2 id="overview-title" className="text-lg font-semibold">
@@ -71,12 +71,25 @@ export default async function HomePage() {
             Open My Plan <IconArrowRight size={14} />
           </Link>
         </div>
-        <div className="surface mt-3 p-2 md:p-3">
+        <div className="surface mt-3 hidden p-2 md:p-3 lg:block">
           <PlanOverview school={ws.school} placements={ws.plan.placements} startTerm={startTerm} findings={validation.findings} />
         </div>
+        <ol className="mt-3 space-y-3 lg:hidden">
+          {[0, 1, 2, 3].map((year) => {
+            const names = [...new Set([...coursesInTerm(catalog, ws.plan.placements, year * 2), ...coursesInTerm(catalog, ws.plan.placements, year * 2 + 1)].map((c) => c.course.name))]
+            return (
+              <li key={year} className="surface p-4">
+                <p className="flex items-baseline justify-between text-sm font-medium">
+                  {YEAR_NAMES[year]} <span className="text-xs font-normal text-fog">Grade {9 + year}</span>
+                </p>
+                <p className="mt-1.5 text-[13px] leading-relaxed text-mist">{names.join(' · ')}</p>
+              </li>
+            )
+          })}
+        </ol>
       </section>
 
-      <div className="mt-8 grid gap-4 lg:grid-cols-3">
+      <div className="mt-8 grid gap-4 lg:grid-cols-3 lg:order-none">
         <section aria-labelledby="status-title" className="surface p-5">
           <h2 id="status-title" className="eyebrow">
             Plan status
@@ -110,7 +123,7 @@ export default async function HomePage() {
           </div>
         </section>
 
-        <section aria-labelledby="next-title" className="surface p-5">
+        <section aria-labelledby="next-title" className="surface order-first p-5 lg:order-none">
           <h2 id="next-title" className="eyebrow">
             {now.term === null ? 'Coming up' : 'This semester and next'}
           </h2>
