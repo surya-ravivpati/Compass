@@ -84,17 +84,20 @@ describe('why not', () => {
 })
 
 describe('editing with downstream consequences', () => {
-  const base = generateFor('geometry', { rigor: 'very-rigorous', goals: ['stem'] }).plan
+  const pr = prefs({ rigor: 'very-rigorous', goals: ['stem'] })
+  const base = generateFor('geometry', pr).plan
 
   it('moving a prerequisite later names the courses it breaks and proposes a cascade', () => {
     const precalc = base.placements.find((p) => p.courseId === 'ap-precalculus')!
-    const preview = previewEdit(demo, student, base, { kind: 'move', courseId: 'ap-precalculus', fromTerm: precalc.term, toTerm: precalc.term + 2 })
+    const preview = previewEdit(demo, student, base, { kind: 'move', courseId: 'ap-precalculus', fromTerm: precalc.term, toTerm: precalc.term + 2 }, pr)
     expect(preview.summary).toBe(`Moved AP Precalculus to ${['freshman', 'sophomore', 'junior', 'senior'][(precalc.term + 2) / 2]} year`)
     expect(preview.affected.map((a) => a.courseId)).toContain('ap-calculus-bc')
     expect(preview.cascade).not.toBeNull()
     expect(preview.cascade!.changes.find((m) => m.kind === 'move' && m.courseId === 'ap-calculus-bc')).toBeDefined()
-    expect(preview.cascade!.summary).toMatch(/^Also move AP Calculus BC to /)
-    expect(preview.cascade!.validation.findings.filter((f) => f.check === 'prerequisites')).toEqual([])
+    expect(preview.cascade!.summary).toMatch(/^Also move AP Calculus BC to senior year/)
+    // The proposal is a complete, valid plan that keeps the student's move.
+    expect(preview.cascade!.validation.graduationPathValid).toBe(true)
+    expect(preview.cascade!.plan.placements.find((p) => p.courseId === 'ap-precalculus')?.term).toBe(precalc.term + 2)
     // The cascade is only proposed: the edited plan itself still shows the conflict.
     expect(preview.after.graduationPathValid).toBe(false)
   })
@@ -102,7 +105,7 @@ describe('editing with downstream consequences', () => {
   it('a harmless move has no consequences', () => {
     const health = base.placements.find((p) => p.courseId === 'health')!
     const other = health.term === 2 ? 3 : 2
-    const preview = previewEdit(demo, student, base, { kind: 'move', courseId: 'health', fromTerm: health.term, toTerm: other })
+    const preview = previewEdit(demo, student, base, { kind: 'move', courseId: 'health', fromTerm: health.term, toTerm: other }, pr)
     expect(preview.affected).toEqual([])
     expect(preview.cascade).toBeNull()
   })

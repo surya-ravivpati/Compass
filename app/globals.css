@@ -1,0 +1,265 @@
+@import 'tailwindcss';
+
+/*
+ * Compass design tokens. Dark-first. Blue is reserved for movement, progress,
+ * active state and AI -- never decoration. Status colours always travel with
+ * an icon and words, never alone.
+ */
+@theme {
+  --color-carbon: #0b0d0f;
+  --color-obsidian: #15181c;
+  --color-graphite: #1b1f24;
+  --color-slate: #262b32;
+  --color-line: rgb(255 255 255 / 0.07);
+  --color-line-strong: rgb(255 255 255 / 0.12);
+  --color-ink: #ffffff;
+  --color-mist: #a7adb5;
+  --color-fog: #7c838d;
+  --color-signal: #2f8cff;
+  --color-signal-hi: #6aabff;
+  --color-signal-soft: rgb(47 140 255 / 0.12);
+  --color-signal-line: rgb(47 140 255 / 0.45);
+  --color-ok: #3dd68c;
+  --color-ok-soft: rgb(61 214 140 / 0.12);
+  --color-warn: #f5b544;
+  --color-warn-soft: rgb(245 181 68 / 0.12);
+  --color-danger: #ff6b6b;
+  --color-danger-soft: rgb(255 107 107 / 0.12);
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, 'SF Mono', Menlo, monospace;
+
+  --radius-card: 10px;
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out-cubic: cubic-bezier(0.65, 0, 0.35, 1);
+
+  --animate-rise: rise 520ms var(--ease-out-quint) both;
+  --animate-fade: fade 400ms var(--ease-out-quint) both;
+  --animate-draw: draw 1400ms var(--ease-in-out-cubic) both;
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes fade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes draw {
+    from {
+      stroke-dashoffset: var(--path-length, 1000);
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+    background: var(--color-carbon);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    background: var(--color-carbon);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-feature-settings: 'ss01', 'cv11';
+    min-height: 100dvh;
+  }
+  ::selection {
+    background: rgb(47 140 255 / 0.35);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-signal);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']) {
+    cursor: pointer;
+  }
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
+  }
+}
+
+@layer components {
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+  .eyebrow {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-fog);
+  }
+  .hairline {
+    border-color: var(--color-line);
+  }
+  .surface {
+    background: var(--color-obsidian);
+    border: 1px solid var(--color-line);
+    border-radius: 14px;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 36px;
+    padding: 0 14px;
+    border-radius: 9px;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: -0.005em;
+    transition:
+      background-color 160ms ease,
+      border-color 160ms ease,
+      color 160ms ease,
+      opacity 160ms ease;
+    white-space: nowrap;
+  }
+  .btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  .btn-primary {
+    background: var(--color-ink);
+    color: var(--color-carbon);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: #e6e9ed;
+  }
+  .btn-signal {
+    background: var(--color-signal);
+    color: #fff;
+  }
+  .btn-signal:hover:not(:disabled) {
+    background: #4a9bff;
+  }
+  .btn-ghost {
+    color: var(--color-mist);
+    border: 1px solid var(--color-line-strong);
+  }
+  .btn-ghost:hover:not(:disabled) {
+    color: var(--color-ink);
+    background: rgb(255 255 255 / 0.04);
+  }
+  .btn-quiet {
+    color: var(--color-mist);
+    padding: 0 10px;
+  }
+  .btn-quiet:hover:not(:disabled) {
+    color: var(--color-ink);
+    background: rgb(255 255 255 / 0.05);
+  }
+  .btn-sm {
+    height: 30px;
+    padding: 0 10px;
+    font-size: 13px;
+    border-radius: 8px;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 34px;
+    padding: 0 13px;
+    border-radius: 999px;
+    border: 1px solid var(--color-line-strong);
+    font-size: 14px;
+    color: var(--color-mist);
+    transition:
+      background-color 160ms ease,
+      border-color 160ms ease,
+      color 160ms ease;
+  }
+  .chip:hover {
+    color: var(--color-ink);
+    border-color: rgb(255 255 255 / 0.22);
+  }
+  .chip[aria-pressed='true'],
+  .chip[aria-checked='true'] {
+    color: var(--color-ink);
+    background: var(--color-signal-soft);
+    border-color: var(--color-signal-line);
+  }
+  .field {
+    width: 100%;
+    height: 40px;
+    padding: 0 12px;
+    border-radius: 9px;
+    background: var(--color-carbon);
+    border: 1px solid var(--color-line-strong);
+    color: var(--color-ink);
+    font-size: 14px;
+    transition: border-color 160ms ease;
+  }
+  .field::placeholder {
+    color: var(--color-fog);
+  }
+  .field:focus {
+    outline: none;
+    border-color: var(--color-signal);
+  }
+  select.field {
+    appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, var(--color-mist) 50%),
+      linear-gradient(135deg, var(--color-mist) 50%, transparent 50%);
+    background-position:
+      calc(100% - 17px) 17px,
+      calc(100% - 12px) 17px;
+    background-size:
+      5px 5px,
+      5px 5px;
+    background-repeat: no-repeat;
+    padding-right: 32px;
+  }
+  .link {
+    color: var(--color-signal-hi);
+    text-underline-offset: 3px;
+  }
+  .link:hover {
+    text-decoration: underline;
+  }
+  .kbd {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    padding: 1px 5px;
+    border-radius: 5px;
+    border: 1px solid var(--color-line-strong);
+    color: var(--color-mist);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}

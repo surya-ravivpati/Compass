@@ -2,7 +2,8 @@ import { courseName, type Catalog } from './catalog.ts'
 import { descendants } from './graph.ts'
 import { evaluatePrerequisites, indexSpans, joinAnd } from './prereqs.ts'
 import { availabilityProblem, occupiedTerms, placementPhrase } from './terms.ts'
-import { TERM_COUNT, type Placement, type Plan, type Preferences, type StudentState, type TermIndex } from './types.ts'
+import { generatePlan } from './generate/index.ts'
+import { DEFAULT_PREFERENCES, TERM_COUNT, type Placement, type Plan, type Preferences, type StudentState, type TermIndex } from './types.ts'
 import { validatePlan, type Finding, type ValidationReport } from './validate.ts'
 
 export type PlanEdit =
@@ -71,9 +72,10 @@ export interface CascadeMove {
   toTerm: TermIndex
 }
 
-/** One step of a proposed follow-up: move a course later, or drop one that can no longer fit. */
+/** One step of a proposed follow-up. */
 export type CascadeChange =
   | ({ kind: 'move' } & CascadeMove)
+  | { kind: 'add'; courseId: string; term: TermIndex; reason: string }
   | { kind: 'remove'; courseId: string; term: TermIndex; reason: string }
 
 export interface Cascade {
@@ -108,7 +110,7 @@ export function previewEdit(
   student: StudentState,
   plan: Plan,
   edit: PlanEdit,
-  prefs?: Pick<Preferences, 'targetCourses'>,
+  prefs: Preferences = DEFAULT_PREFERENCES,
 ): EditPreview {
   const before = validatePlan(catalog, student, plan, prefs)
   const next = applyEdit(plan, edit)
@@ -126,13 +128,91 @@ export function previewEdit(
     .map((f) => ({ courseId: f.courseId!, term: f.term!, message: f.message }))
 
   let cascade: Cascade | null = null
-  if (affected.length > 0) {
+  if (introduced.length > 0) {
     const locked = new Set(editedTerm === null ? [] : [`${editedId}@${editedTerm}`])
-    const repaired = repairDependents(catalog, student, next, locked, prefs)
-    if (repaired.changes.length > 0) cascade = repaired
+    cascade = replanAround(catalog, student, next, after, locked, edit, prefs)
+    if (!cascade && affected.length > 0) {
+      const repaired = repairDependents(catalog, student, next, locked, prefs)
+      if (repaired.changes.length > 0) cascade = repaired
+    }
   }
 
   return { edit, summary: describeEdit(catalog, edit), plan: next, before, after, introduced, resolved, affected, cascade }
+}
+
+/**
+ * Re-plans around a student's edit with the generator: the edited course and
+ * every untouched course stay exactly where they are; only courses the edit
+ * broke, and electives in terms it overfilled, are released for the planner
+ * to place again. Returns null when no valid plan keeps the edit.
+ */
+export function replanAround(
+  catalog: Catalog,
+  student: StudentState,
+  edited: Plan,
+  after: ValidationReport,
+  locked: Set<string>,
+  edit: PlanEdit,
+  prefs: Preferences,
+): Cascade | null {
+  const history = edited.placements.filter((p) => p.status !== 'planned')
+  const broken = new Set(
+    after.findings
+      .filter((f) => f.check === 'prerequisites' && f.severity === 'error' && f.courseId && f.term !== undefined)
+      .map((f) => `${f.courseId}@${f.term}`)
+      .filter((k) => !locked.has(k)),
+  )
+  // Anything downstream of a broken course is released too.
+  const brokenIds = new Set([...broken].map((k) => k.slice(0, k.lastIndexOf('@'))))
+  const downstream = new Set([...brokenIds].flatMap((id) => [...descendants(catalog, id)]))
+  const overloaded = new Set(after.findings.filter((f) => f.code === 'load-over' && f.term !== undefined).map((f) => f.term!))
+  const pins = edited.placements.filter((p) => {
+    if (p.status !== 'planned') return false
+    const key = `${p.courseId}@${p.term}`
+    if (locked.has(key)) return true
+    if (broken.has(key) || downstream.has(p.courseId)) return false
+    const course = catalog.courses.get(p.courseId)
+    if (!course) return false
+    const elective = course.satisfies.length === 0
+    if (elective && occupiedTerms(p.term, course.durationTerms).some((t) => overloaded.has(t))) return false
+    return true
+  })
+  const exclude = edit.kind === 'remove' || edit.kind === 'replace' ? [edit.courseId] : []
+  const result = generatePlan({ catalog, student, history, preferences: prefs, pins, exclude })
+  if (result.status !== 'valid') return null
+  const diff = diffPlans(edited, result.plan)
+  const changes: CascadeChange[] = [
+    ...diff.moved.map((m) => ({ kind: 'move' as const, ...m })),
+    ...diff.added.map((p) => ({ kind: 'add' as const, courseId: p.courseId, term: p.term, reason: 'Fills the gap this change leaves.' })),
+    ...diff.removed.map((p) => ({
+      kind: 'remove' as const,
+      courseId: p.courseId,
+      term: p.term,
+      reason:
+        broken.has(`${p.courseId}@${p.term}`) || downstream.has(p.courseId)
+          ? 'Can no longer fit before graduation after this change.'
+          : 'Makes room for this change.',
+    })),
+  ]
+  if (changes.length === 0) return null
+  return { plan: result.plan, changes, validation: result.validation, summary: summarizeChanges(catalog, changes) }
+}
+
+function summarizeChanges(catalog: Catalog, changes: CascadeChange[]): string {
+  const name = (id: string) => courseName(catalog, id)
+  const where = (id: string, term: TermIndex) => placementPhrase(term, catalog.courses.get(id)?.durationTerms ?? 1)
+  const moves = changes.filter((c): c is Extract<CascadeChange, { kind: 'move' }> => c.kind === 'move')
+  const adds = changes.filter((c): c is Extract<CascadeChange, { kind: 'add' }> => c.kind === 'add')
+  const removals = changes.filter((c): c is Extract<CascadeChange, { kind: 'remove' }> => c.kind === 'remove')
+  const parts: string[] = []
+  if (moves.length) parts.push(`move ${joinAnd(moves.map((m) => `${name(m.courseId)} to ${where(m.courseId, m.toTerm)}`))}`)
+  if (adds.length) parts.push(`add ${joinAnd(adds.map((a) => `${name(a.courseId)} in ${where(a.courseId, a.term)}`))}`)
+  const noFit = removals.filter((r) => r.reason.startsWith('Can no longer'))
+  const room = removals.filter((r) => !r.reason.startsWith('Can no longer'))
+  if (room.length) parts.push(`make room by dropping ${joinAnd(room.map((r) => name(r.courseId)))}`)
+  if (noFit.length) parts.push(`drop ${joinAnd(noFit.map((r) => name(r.courseId)))}, which can no longer fit before graduation`)
+  const text = `Also ${joinAnd(parts)}`
+  return text
 }
 
 /**
@@ -190,7 +270,7 @@ export function repairDependents(
         kind: 'remove',
         courseId: course.id,
         term: from,
-        reason: `${course.name} can no longer fit before graduation after this change.`,
+        reason: 'Can no longer fit before graduation after this change.',
       })
       current = { placements: without }
       continue
@@ -219,7 +299,7 @@ export function repairDependents(
           kind: 'remove',
           courseId: dc.id,
           term: d.term,
-          reason: `${dc.name} needs ${course.name} first, and there's no term left after it.`,
+          reason: 'Can no longer fit before graduation after this change.',
         })
       } else {
         changes.push({ kind: 'move', courseId: dc.id, fromTerm: d.term, toTerm: spot })
@@ -231,18 +311,7 @@ export function repairDependents(
   return finish(validatePlan(catalog, student, current, prefs))
 
   function finish(validation: ValidationReport): Cascade {
-    const name = (id: string) => courseName(catalog, id)
-    const moves = changes.filter((c): c is Extract<CascadeChange, { kind: 'move' }> => c.kind === 'move')
-    const removals = changes.filter((c): c is Extract<CascadeChange, { kind: 'remove' }> => c.kind === 'remove')
-    const parts: string[] = []
-    if (moves.length) {
-      parts.push(
-        `move ${joinAnd(moves.map((m) => `${name(m.courseId)} to ${placementPhrase(m.toTerm, catalog.courses.get(m.courseId)!.durationTerms)}`))}`,
-      )
-    }
-    if (removals.length) parts.push(`drop ${joinAnd(removals.map((r) => name(r.courseId)))}, which can no longer fit`)
-    const summary = parts.length ? `Also ${parts.join(', and ')}` : ''
-    return { plan: current, changes, validation, summary: summary.charAt(0).toUpperCase() + summary.slice(1) }
+    return { plan: current, changes, validation, summary: changes.length ? summarizeChanges(catalog, changes) : '' }
   }
 }
 

@@ -261,6 +261,11 @@ export interface Preferences {
   targetCourses: string[]
   /** Courses the student does not want. */
   avoidCourses: string[]
+  /**
+   * The student's own words about goals (a career, a skill). Context for
+   * Compass AI only; the generator never reads free text.
+   */
+  notes?: string
 }
 
 export const DEFAULT_PREFERENCES: Preferences = {
