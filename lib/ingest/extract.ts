@@ -19,7 +19,7 @@ const PROMPT = [
   'quote: the exact words describing the course, at most 300 characters.',
   'page: the number in the "=== Page N ===" marker above the course.',
   'Also list any graduation requirements the pages state (subject, credits, the exact wording).',
-  'Skip tables of contents and course lists or indexes that only give names, codes and page numbers: record a course from the page that describes it.',
+  'Skip tables of contents and course indexes whose entries point to other pages by page number. A page that lists courses or programs with their codes under one shared description does describe them: record each one, with the shared facts that apply.',
 ].join('\n')
 
 const SCHEMA: Schema = {
@@ -74,7 +74,12 @@ export interface CatalogReading {
   requirements: DraftRequirement[]
 }
 
-type ReadOptions = ClientOptions & { pagesPerChunk?: number; onProgress?: (done: number, total: number) => void }
+type ReadOptions = ClientOptions & {
+  pagesPerChunk?: number
+  /** Read only these 1-based pages (to redo a few after a prompt change). */
+  only?: number[]
+  onProgress?: (done: number, total: number) => void
+}
 
 /**
  * Reads course records out of catalog pages with Gemini, then merges them
@@ -127,10 +132,18 @@ export async function readCatalog(pages: string[], document: string, options: Re
       throw err
     }
   }
-  for (let c = 0; c < chunks; c++) {
-    const start = c * size
-    await read(start, Math.min(size, pages.length - start))
-    options.onProgress?.(c + 1, chunks)
+  if (options.only) {
+    const wanted = [...new Set(options.only)].filter((p) => p >= 1 && p <= pages.length).sort((a, b) => a - b)
+    for (const [i, page] of wanted.entries()) {
+      await read(page - 1, 1)
+      options.onProgress?.(i + 1, wanted.length)
+    }
+  } else {
+    for (let c = 0; c < chunks; c++) {
+      const start = c * size
+      await read(start, Math.min(size, pages.length - start))
+      options.onProgress?.(c + 1, chunks)
+    }
   }
   return { document, extractedAt: new Date().toISOString(), model: options.model ?? aiModel(), pages: pages.length, raw, requirements }
 }

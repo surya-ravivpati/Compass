@@ -35,7 +35,8 @@ const GRADES = new Set([9, 10, 11, 12])
 
 /**
  * The course codes in a code field, normalized, so "ART101–Semester 1
- * ART102–Semester 2", "ART101/ART102" and "ART101 —" all read the same.
+ * ART102–Semester 2", "ART101/ART102", "ART101/102" and "ART101 —" all read
+ * the same.
  */
 export function courseCodes(code: string | null | undefined): string[] {
   if (!code) return []
@@ -44,7 +45,12 @@ export function courseCodes(code: string | null | undefined): string[] {
     .replace(/([A-Z]{2,})\s+(\d{2,})/g, '$1$2')
     .split(/[\s,;/|–—-]+/)
     .filter((t) => t.length >= 3 && /\d/.test(t) && /^[A-Z0-9.]+$/.test(t))
-  return [...new Set(tokens)]
+  // A bare number right after a code shares its prefix: "VOC171/172".
+  const codes = tokens.map((t, i) => {
+    const prev = tokens[i - 1]?.match(/^([A-Z]+)(\d+)$/)
+    return /^\d+$/.test(t) && prev && prev[2]!.length === t.length ? prev[1] + t : t
+  })
+  return [...new Set(codes)]
 }
 
 /**

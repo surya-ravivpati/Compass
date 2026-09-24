@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { buildSchool } from '../../lib/ingest/build.ts'
-import { extractCatalog, extractPdfPages } from '../../lib/ingest/extract.ts'
+import { extractCatalog, extractPdfPages, readCatalog } from '../../lib/ingest/extract.ts'
 import { courseCodes, mergeRawCourses } from '../../lib/ingest/normalize.ts'
 import type { CatalogOverrides, DraftCatalog } from '../../lib/ingest/types.ts'
 import { buildCatalog, generatePlan, DEFAULT_PREFERENCES } from '../../lib/engine/index.ts'
@@ -55,6 +55,10 @@ describe('draft merging', () => {
     expect(courseCodes('SPA511/SPA512')).toEqual(['SPA511', 'SPA512'])
     expect(courseCodes('— BUS252')).toEqual(['BUS252'])
     expect(courseCodes('MATH 101, MATH 102')).toEqual(['MATH101', 'MATH102'])
+    // A bare second number shares the first code's prefix.
+    expect(courseCodes('VOC171/172')).toEqual(['VOC171', 'VOC172'])
+    expect(courseCodes('MTH451 452')).toEqual(['MTH451', 'MTH452'])
+    expect(courseCodes('0405/0406')).toEqual(['0405', '0406'])
     expect(courseCodes(null)).toEqual([])
   })
 
@@ -141,6 +145,20 @@ describe('extraction', () => {
     const result = await extractCatalog(['Cover page', 'Biology — 1 credit'], DOC, { apiKey: 'k', fetchImpl, model: 'test' })
     expect(bodies[0]).toContain('=== Page 2 ===')
     expect(result.courses.map((c) => [c.id, c.source.page])).toEqual([['biology', 2]])
+  })
+
+  it('can re-read chosen pages alone, keeping their real page numbers', async () => {
+    const bodies: string[] = []
+    const fetchImpl = vi.fn(async (_url: string, init: RequestInit) => {
+      bodies.push(String(init.body))
+      const payload = { courses: [{ name: 'Welding', code: 'VOC871/872', page: 2 }], requirements: [] }
+      return new Response(JSON.stringify({ candidates: [{ content: { role: 'model', parts: [{ text: JSON.stringify(payload) }] } }] }), { status: 200 })
+    }) as unknown as typeof fetch
+    const reading = await readCatalog(['Cover', 'Tech Campus programs', 'Index'], DOC, { apiKey: 'k', fetchImpl, model: 'test', only: [2] })
+    expect(bodies).toHaveLength(1)
+    expect(bodies[0]).toContain('=== Page 2 ===')
+    expect(bodies[0]).not.toContain('=== Page 1 ===')
+    expect(reading.raw.map((r) => [r.name, r.page])).toEqual([['Welding', 2]])
   })
 
   it('reads text out of a real PDF', async () => {
