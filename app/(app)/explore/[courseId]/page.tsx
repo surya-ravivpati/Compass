@@ -159,11 +159,13 @@ export default async function CoursePage(props: PageProps<'/explore/[courseId]'>
         </h2>
         <dl className="mt-3 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-line bg-line md:grid-cols-4">
           <Fact label="Offered" value={course.durationTerms === 2 ? 'Full year, starts in fall' : course.seasons.map((s) => (s === 'fall' ? 'Fall' : 'Spring')).join(' or ')} />
-          <Fact label="Typical workload" value={`${WORKLOAD[course.workload]}${course.lab ? ' · lab' : ''}`} />
+          <Fact label={course.workloadEstimated ? 'Workload (estimated)' : 'Typical workload'} value={`${WORKLOAD[course.workload]}${course.lab ? ' · lab' : ''}`} />
           <Fact label="Counts toward" value={requirementNames.length ? requirementNames.join(', ') : 'Electives'} />
           <Fact label="Grades" value={gradeList(course.grades)} />
         </dl>
-        <p className="mt-2 text-xs text-fog">Workload is the catalog’s estimate, not a rule.</p>
+        <p className="mt-2 text-xs text-fog">
+          {course.workloadEstimated ? 'The catalog doesn’t state a workload; this is estimated from the course level.' : 'Workload is the catalog’s estimate, not a rule.'}
+        </p>
       </section>
 
       {goals.length || equivalents.length || sequence.length > 1 || course.notes?.length ? (

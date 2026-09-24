@@ -81,6 +81,8 @@ export interface Course {
   prerequisites: PrereqGroup[]
   level: Level
   workload: Workload
+  /** True when the catalog gave no workload and it was estimated from the level. */
+  workloadEstimated?: boolean
   /** Lab-based course (weekly lab time and write-ups). */
   lab?: boolean
   /** Interest and subject tags, e.g. "engineering", "biology". */

@@ -15,10 +15,11 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/migrate.ts",
-    "db:seed": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/seed.ts",
-    "catalog:validate": "node --experimental-strip-types scripts/validate-catalog.ts",
-    "catalog:extract": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/extract-catalog.ts"
+    "db:migrate": "node --env-file-if-exists=.env.local --experimental-strip-types --no-warnings scripts/migrate.ts",
+    "db:seed": "node --env-file-if-exists=.env.local --experimental-strip-types --no-warnings scripts/seed.ts",
+    "catalog:validate": "node --experimental-strip-types --no-warnings scripts/validate-catalog.ts",
+    "catalog:extract": "node --env-file-if-exists=.env.local --experimental-strip-types --no-warnings scripts/extract-catalog.ts",
+    "catalog:build": "node --experimental-strip-types --no-warnings scripts/build-catalog.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -44,6 +45,7 @@
     "playwright": "^1.63.0",
     "tailwindcss": "^4.3.3",
     "typescript": "^5.9.3",
+    "unpdf": "^1.8.1",
     "vitest": "^5.0.1"
   }
 }

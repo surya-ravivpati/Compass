@@ -91,7 +91,7 @@ export function Inspector({
       <dl className="mt-4 grid grid-cols-3 gap-px overflow-hidden rounded-xl border border-line bg-line text-center">
         <Fact label="Level" value={LEVEL[course.level] ?? course.level} />
         <Fact label="Credits" value={`${course.credits}`} />
-        <Fact label="Workload" value={WORKLOAD[course.workload] ?? ''} />
+        <Fact label={course.workloadEstimated ? 'Workload (est.)' : 'Workload'} value={WORKLOAD[course.workload] ?? ''} />
       </dl>
 
       {findings.length ? (
