@@ -122,6 +122,33 @@ describe('catalog build', () => {
     expect(plan.plan.placements.map((p) => p.courseId)).toContain('geometry')
   })
 
+  it('applies the school credit rule where a course gives no number, and cites the catalog', () => {
+    const o = overrides()
+    o.school.creditsPerTerm = 1
+    o.courses = { statistics: { seasons: ['spring'] } }
+    o.requirements[0]!.source = { page: 1, quote: 'Two credits of mathematics.' }
+    o.policies = [{ kind: 'every-term', id: 'math-every', label: 'Math every semester', department: 'math', source: { page: 2, quote: 'Math each semester.' } }]
+    const result = buildSchool(draft(), o)
+    expect(result.errors).toEqual([])
+    const credits = Object.fromEntries(result.school!.courses.map((c) => [c.id, c.credits]))
+    // AP Calculus states no credits: one per semester, two semesters. The others state theirs.
+    expect(credits).toEqual({ 'algebra-1': 1, geometry: 1, statistics: 0.5, 'ap-calculus': 2 })
+    expect(result.school!.requirements[0]!.source).toEqual({ kind: 'catalog', document: DOC, page: 1, quote: 'Two credits of mathematics.' })
+    expect(result.school!.policies[0]!.source).toEqual({ kind: 'catalog', document: DOC, page: 2, quote: 'Math each semester.' })
+  })
+
+  it('shows prerequisite wording the engine cannot check as a note', () => {
+    const d = draft()
+    const stats = d.courses.find((c) => c.id === 'statistics')!
+    stats.prerequisiteText = 'Junior or senior classification.'
+    const o = overrides()
+    o.courses = { statistics: { seasons: ['spring'] }, 'ap-calculus': { credits: 1 } }
+    const result = buildSchool(d, o)
+    expect(result.school!.courses.find((c) => c.id === 'statistics')!.notes).toEqual(['Prerequisite: Junior or senior classification.'])
+    // Wording already read as courses isn't repeated.
+    expect(result.school!.courses.find((c) => c.id === 'geometry')!.notes).toBeUndefined()
+  })
+
   it('reports a prerequisite that names no course', () => {
     const d = draft()
     d.courses.find((c) => c.id === 'geometry')!.prerequisites = [['Math 8A']]

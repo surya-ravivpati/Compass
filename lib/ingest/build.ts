@@ -1,7 +1,7 @@
 import { validateCatalog } from '../engine/catalog.ts'
 import type { Course, Level, PrereqGroup, Requirement, SchoolConfig, SourceRef, Workload } from '../engine/types.ts'
 import { normalizeName, slugify } from './normalize.ts'
-import type { CatalogOverrides, DraftCatalog, DraftCourse } from './types.ts'
+import type { CatalogCitation, CatalogOverrides, DraftCatalog, DraftCourse } from './types.ts'
 
 export interface BuildResult {
   school: SchoolConfig | null
@@ -43,10 +43,11 @@ export function buildSchool(draft: DraftCatalog, overrides: CatalogOverrides): B
     const at = `${d.name} (page ${d.source.page ?? '?'})`
     const department = deptFor(d.department)
     if (!department) errors.push(`${at}: department "${d.department ?? 'missing'}" matches no department in overrides.json.`)
-    const credits = o.credits ?? d.credits
-    if (credits === null || credits === undefined) errors.push(`${at}: credits aren't stated. Add "credits" in overrides.json.`)
     const durationTerms = o.durationTerms ?? (d.length === 'year' ? 2 : d.length === 'semester' ? 1 : null)
     if (durationTerms === null) errors.push(`${at}: the catalog doesn't say whether it's a semester or full-year course. Add "durationTerms".`)
+    const perTerm = overrides.school.creditsPerTerm
+    const credits = o.credits ?? d.credits ?? (perTerm && durationTerms ? perTerm * durationTerms : null)
+    if (credits === null || credits === undefined) errors.push(`${at}: credits aren't stated. Add "credits" in overrides.json.`)
     const grades = o.grades ?? d.grades
     if (!grades?.length) errors.push(`${at}: grade levels aren't stated. Add "grades".`)
     const seasons = o.seasons ?? (durationTerms === 2 ? ['fall' as const] : d.seasons)
@@ -98,7 +99,9 @@ export function buildSchool(draft: DraftCatalog, overrides: CatalogOverrides): B
         ...(o.sequence ? { sequence: o.sequence } : {}),
         ...(o.equivalenceGroup ? { equivalenceGroup: o.equivalenceGroup } : {}),
         ...(o.maxEnrollments ? { maxEnrollments: o.maxEnrollments } : {}),
-        ...(d.notes.length ? { notes: d.notes } : {}),
+        ...(o.satisfiesFromGrade ? { satisfiesFromGrade: o.satisfiesFromGrade } : {}),
+        ...(o.byPlacement ? { byPlacement: true } : {}),
+        ...(notesFor(d).length ? { notes: notesFor(d) } : {}),
         source: d.source,
       })
     }
@@ -107,6 +110,8 @@ export function buildSchool(draft: DraftCatalog, overrides: CatalogOverrides): B
     warnings.push(`${estimatedWorkload} course(s) have no workload in the catalog; Compass estimates it from the level and labels it as an estimate.`)
   }
 
+  const cite = (c: CatalogCitation | undefined): SourceRef =>
+    c ? { kind: 'catalog', document: draft.document, page: c.page, quote: c.quote } : configSource
   const requirements: Requirement[] = overrides.requirements.map((r) => ({
     id: r.id,
     name: r.name,
@@ -115,7 +120,7 @@ export function buildSchool(draft: DraftCatalog, overrides: CatalogOverrides): B
     kind: r.kind,
     ...(r.mustInclude ? { mustInclude: r.mustInclude } : {}),
     ...(r.sameSequence ? { sameSequence: true } : {}),
-    source: configSource,
+    source: cite(r.source),
   }))
   if (draft.requirements.length) {
     warnings.push(
@@ -134,7 +139,7 @@ export function buildSchool(draft: DraftCatalog, overrides: CatalogOverrides): B
     preHighSchoolCredit: overrides.school.preHighSchoolCredit,
     departments: overrides.departments.map(({ match: _match, ...d }) => d),
     requirements,
-    policies: (overrides.policies ?? []).map((p) => ({ ...p, enforcement: p.enforcement ?? 'target', source: configSource }) as SchoolConfig['policies'][number]),
+    policies: (overrides.policies ?? []).map((p) => ({ ...p, enforcement: p.enforcement ?? 'target', source: cite(p.source) }) as SchoolConfig['policies'][number]),
     courses,
     mathPlacement: overrides.mathPlacement ?? [],
     source: { kind: 'catalog', document: draft.document },
@@ -143,4 +148,15 @@ export function buildSchool(draft: DraftCatalog, overrides: CatalogOverrides): B
     ;(issue.severity === 'error' ? errors : warnings).push(`${issue.path}: ${issue.message}`)
   }
   return errors.length ? { school: null, errors, warnings } : { school, errors, warnings }
+}
+
+/**
+ * Catalog notes a student should see, including prerequisite wording that
+ * isn't a list of courses ("Audition", "Junior or senior classification"):
+ * the engine can't check it, so it is shown rather than dropped.
+ */
+function notesFor(d: DraftCourse): string[] {
+  const wording = d.prerequisiteText && !d.prerequisites ? d.prerequisiteText.trim() : ''
+  const prerequisite = wording ? (/^prerequisite/i.test(wording) ? wording : `Prerequisite: ${wording}`) : ''
+  return [...d.notes, ...(prerequisite ? [prerequisite] : [])]
 }

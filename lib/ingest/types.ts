@@ -47,6 +47,15 @@ export interface DraftCatalog {
   requirements: DraftRequirement[]
 }
 
+/** Omit applied to each kind of policy, so kind-specific fields (department, courseIds) survive. */
+type PolicyWithout<K extends PropertyKey> = Policy extends infer P ? (P extends Policy ? Omit<P, K> : never) : never
+
+/** A page of the catalog PDF and its exact words. */
+export interface CatalogCitation {
+  page: number
+  quote: string
+}
+
 /** What a reviewer supplies. Every value here is school configuration, not catalog text. */
 export interface CatalogOverrides {
   school: {
@@ -55,6 +64,12 @@ export interface CatalogOverrides {
     load: { min: number; max: number }
     totalCredits: number
     preHighSchoolCredit: boolean
+    /**
+     * The school's credit rule when course pages don't give a number
+     * ("semesters/credits": one credit per semester). A course that states
+     * its own credits keeps them.
+     */
+    creditsPerTerm?: number
   }
   departments: { id: string; name: string; shortName?: string; order: number; lane: boolean; match: string[] }[]
   requirements: {
@@ -67,6 +82,8 @@ export interface CatalogOverrides {
     departments?: string[]
     mustInclude?: MustInclude[]
     sameSequence?: boolean
+    /** Where the catalog states it. */
+    source?: CatalogCitation
   }[]
   courses?: Record<
     string,
@@ -81,10 +98,12 @@ export interface CatalogOverrides {
       sequence: { id: string; step: number }
       equivalenceGroup: string
       maxEnrollments: number
+      satisfiesFromGrade: Partial<Record<string, GradeLevel>>
+      byPlacement: boolean
       prerequisites: { courseId: string; timing?: 'before' | 'before-or-concurrent' | 'concurrent' }[][]
       exclude: boolean
     }>
   >
-  policies?: (Omit<Policy, 'source' | 'enforcement'> & { enforcement?: Enforcement })[]
+  policies?: (PolicyWithout<'source' | 'enforcement'> & { enforcement?: Enforcement; source?: CatalogCitation })[]
   mathPlacement?: MathPlacementOption[]
 }
