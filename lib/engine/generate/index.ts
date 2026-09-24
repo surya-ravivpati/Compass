@@ -1,7 +1,8 @@
 import type { Catalog } from '../catalog.ts'
 import { earliestStarts, prerequisiteDepths } from '../graph.ts'
 import { allocateRequirements } from '../requirements.ts'
-import { availabilityProblem } from '../terms.ts'
+import { joinAnd } from '../prereqs.ts'
+import { availabilityProblem, termLabel } from '../terms.ts'
 import {
   TERM_COUNT,
   type Placement,
@@ -16,7 +17,7 @@ import { buildLanes, enumerateTracks, reasonKey, type Lane, type PlacementReason
 import { buildPreferenceModel, GOAL_LABELS } from './preferences.ts'
 
 export type { PlacementReason } from './lanes.ts'
-export { buildPreferenceModel, GOAL_LABELS, GOAL_TAGS, levelIndex } from './preferences.ts'
+export { buildPreferenceModel, GOAL_LABELS, GOAL_TAGS, interestScore, levelIndex, matchedGoals, type PreferenceModel } from './preferences.ts'
 
 export interface GenerateInput {
   catalog: Catalog
@@ -149,6 +150,11 @@ export function generatePlan(input: GenerateInput): GenerateResult {
     const plan: Plan = { placements: sortPlacements(filled.placements) }
     const validation = validatePlan(catalog, student, plan, prefs)
     const notes = [
+      ...(fill.raisedTerms.length
+        ? [
+            `To reach the ${catalog.school.totalCredits} credits your school requires, Compass planned ${catalog.school.load.max} courses in ${joinAnd(fill.raisedTerms.map((t) => termLabel(t)))} — more than the ${model.targetLoad} you’d otherwise have.`,
+          ]
+        : []),
       ...fill.shortTerms.map((s) => s.explanation),
       ...fill.unplaced.map((id) => `${catalog.courses.get(id)?.name ?? id} could not be placed in any remaining term.`),
     ]

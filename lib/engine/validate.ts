@@ -627,21 +627,42 @@ function checkReachability(
         source: req.source,
       })
     }
-    // Credits that remain reachable from the courses not yet taken.
-    const reachableCredits = [...catalog.courses.values()]
-      .filter((c) => c.satisfies.includes(req.id) && !takenIds.has(c.id) && earliest.get(c.id)?.term != null)
-      .reduce((sum, c) => sum + c.credits, 0)
+    // Credits that remain reachable from the courses not yet taken. Any course
+    // can count as an elective, so there the limit is the seats left.
+    const reachableCredits =
+      req.kind === 'elective'
+        ? seatCredits(catalog, student)
+        : [...catalog.courses.values()]
+            .filter((c) => c.satisfies.includes(req.id) && !takenIds.has(c.id) && earliest.get(c.id)?.term != null)
+            .reduce((sum, c) => sum + c.credits, 0)
     const stillNeeded = req.credits - r.completed - r.inProgress
     if (stillNeeded > 0 && reachableCredits < stillNeeded) {
       add({
         check: 'reachability',
         code: 'requirement-credits-unreachable',
         severity: 'error',
-        message: `${req.name} can no longer be finished before graduation: you need ${formatCredits(stillNeeded)} more, and only ${formatCredits(reachableCredits)} of ${req.name.toLowerCase()} courses are still reachable.`,
+        message:
+          req.kind === 'elective'
+            ? `${req.name} can no longer be finished before graduation: you need ${formatCredits(stillNeeded)} more, and at most ${formatCredits(reachableCredits)} fit in the semesters you have left.`
+            : `${req.name} can no longer be finished before graduation: you need ${formatCredits(stillNeeded)} more, and only ${formatCredits(reachableCredits)} of ${req.name.toLowerCase()} courses are still reachable.`,
         requirementId: req.id,
         source: req.source,
       })
     }
+  }
+
+  // Total credits: at most one half-credit per open seat per semester remains.
+  const total = progress.total
+  const doneCredits = total.completed + total.inProgress
+  const seats = seatCredits(catalog, student)
+  if (total.remaining > 0 && doneCredits + seats < total.required) {
+    add({
+      check: 'reachability',
+      code: 'total-credits-unreachable',
+      severity: 'error',
+      message: `Graduation needs ${formatCredits(total.required)}. You have ${formatCredits(doneCredits)}, and at most ${formatCredits(seats)} more fit in the semesters you have left.`,
+      source: catalog.school.source,
+    })
   }
 
   const inPlan = new Set(placements.map((p) => p.courseId))
@@ -672,6 +693,12 @@ function checkReachability(
       })
     }
   }
+}
+
+/** The most credit still earnable: every open seat, every remaining semester, at a half credit each. */
+function seatCredits(catalog: Catalog, student: StudentState): number {
+  const terms = Math.max(0, TERM_COUNT - student.startTerm)
+  return terms * catalog.school.load.max * 0.5
 }
 
 export function formatCredits(n: number): string {

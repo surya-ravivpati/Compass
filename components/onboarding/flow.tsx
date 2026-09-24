@@ -1,12 +1,14 @@
 'use client'
 
 import { useEffect, useMemo, useState, useTransition } from 'react'
-import type { Activity, ActivitySeason, GoalId, GradeLevel, Rigor, SchoolConfig } from '@/lib/engine'
+import type { Activity, GoalId, GradeLevel, Rigor, SchoolConfig } from '@/lib/engine'
 import { academicYearLabel, graduationYear, startTermFor } from '@/lib/calendar'
-import { GOALS, RIGOR_OPTIONS, SEASONS } from '@/lib/goals'
+import { GOALS, RIGOR_OPTIONS } from '@/lib/goals'
 import { completeOnboarding, loadSchoolForOnboarding, type OnboardingResult } from '@/app/onboarding/actions'
-import { IconArrowLeft, IconArrowRight, IconCheck, IconPlus, IconX } from '@/components/ui/icons'
+import { suggestGoalsAction, type GoalSuggestion } from '@/app/actions/ai'
+import { IconArrowLeft, IconArrowRight, IconCheck } from '@/components/ui/icons'
 import { Logo } from '@/components/ui/logo'
+import { ActivitiesEditor } from './activities-editor'
 import { CoursePicker, type PickedCourse } from './course-picker'
 import { Reveal } from './reveal'
 
@@ -415,9 +417,22 @@ export function OnboardingFlow({
               {answers.notes.trim() ? (
                 <p className="mt-2 text-sm text-fog">
                   {aiEnabled
-                    ? 'Compass AI will use this to explain your plan and answer questions. Course choices come from the goals you picked above.'
+                    ? 'Compass AI will use this to explain your plan and answer questions. Course choices come from the goals you pick.'
                     : 'Saved with your profile. Course choices come from the goals you picked above.'}
                 </p>
+              ) : null}
+              {aiEnabled && answers.notes.trim().length > 2 && answers.schoolId ? (
+                <GoalSuggestions
+                  schoolId={answers.schoolId}
+                  text={answers.notes}
+                  onAccept={(goals, interests) =>
+                    setAnswers((a) => ({
+                      ...a,
+                      goals: [...new Set([...a.goals, ...goals])],
+                      interests: [...new Set([...a.interests, ...interests])],
+                    }))
+                  }
+                />
               ) : null}
             </Step>
           )}
@@ -526,71 +541,55 @@ function Row({ label, value }: { label: string; value: string }) {
   )
 }
 
-function ActivitiesEditor({ value, onChange }: { value: Activity[]; onChange: (v: Activity[]) => void }) {
-  const [draft, setDraft] = useState<Activity>({ name: '', kind: 'sport', seasons: [], hoursPerWeek: 10 })
-  const valid = draft.name.trim().length > 0 && draft.seasons.length > 0 && draft.hoursPerWeek > 0
-  const toggleSeason = (s: ActivitySeason) =>
-    setDraft((d) => ({ ...d, seasons: d.seasons.includes(s) ? d.seasons.filter((x) => x !== s) : [...d.seasons, s] }))
+
+/** Compass AI reads the student's own words and suggests goals; the student decides. */
+function GoalSuggestions({
+  schoolId,
+  text,
+  onAccept,
+}: {
+  schoolId: string
+  text: string
+  onAccept: (goals: GoalId[], interests: string[]) => void
+}) {
+  const [result, setResult] = useState<GoalSuggestion | null>(null)
+  const [accepted, setAccepted] = useState(false)
+  const [pending, startTransition] = useTransition()
+  if (accepted) return <p className="mt-3 text-sm text-ok">Added. You can adjust the goals above.</p>
   return (
-    <div className="space-y-4">
-      {value.length ? (
-        <ul className="space-y-2">
-          {value.map((a, i) => (
-            <li key={`${a.name}-${i}`} className="flex items-center justify-between gap-3 rounded-xl border border-line px-4 py-3">
-              <span>
-                <span className="font-medium">{a.name}</span>
-                <span className="ml-2 text-sm text-mist">
-                  {a.seasons.map((s) => SEASONS.find((x) => x.id === s)?.label).join(', ')} · {a.hoursPerWeek} hrs/week
-                </span>
+    <div className="mt-3 rounded-xl border border-signal-line/60 p-3.5">
+      {result?.ok ? (
+        result.goals.length || result.interests.length ? (
+          <div>
+            <p className="text-sm">
+              Compass AI suggests:{' '}
+              <span className="text-mist">
+                {[...result.goals.map((g) => GOALS.find((x) => x.id === g)?.label ?? g), ...result.interests.map((i) => i.replace(/-/g, ' '))].join(', ')}
               </span>
-              <button type="button" className="btn btn-quiet btn-sm" onClick={() => onChange(value.filter((_, j) => j !== i))} aria-label={`Remove ${a.name}`}>
-                <IconX size={14} />
+            </p>
+            <div className="mt-2 flex gap-2">
+              <button type="button" className="btn btn-signal btn-sm" onClick={() => { onAccept(result.goals, result.interests); setAccepted(true) }}>
+                Add these
               </button>
-            </li>
-          ))}
-        </ul>
-      ) : null}
-      <div className="rounded-xl border border-line p-4">
-        <div className="grid gap-3 sm:grid-cols-[1fr_140px]">
-          <input className="field" placeholder="Varsity soccer, robotics club, part-time job…" value={draft.name} maxLength={60} onChange={(e) => setDraft({ ...draft, name: e.target.value })} aria-label="Activity name" />
-          <select className="field" value={draft.kind} onChange={(e) => setDraft({ ...draft, kind: e.target.value as Activity['kind'] })} aria-label="Kind of activity">
-            <option value="sport">Sport</option>
-            <option value="club">Club</option>
-            <option value="job">Job</option>
-            <option value="other">Other</option>
-          </select>
+              <button type="button" className="btn btn-quiet btn-sm" onClick={() => setResult(null)}>
+                No thanks
+              </button>
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-mist">Compass AI didn’t find goals it could map from that. Pick from the list above.</p>
+        )
+      ) : (
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="flex items-center gap-2 text-sm text-mist">
+            <span className="h-1.5 w-1.5 rounded-full bg-signal" aria-hidden="true" /> Let Compass AI suggest goals from what you wrote?
+          </p>
+          <button type="button" className="btn btn-ghost btn-sm" disabled={pending} onClick={() => startTransition(async () => setResult(await suggestGoalsAction({ schoolId, text })))}>
+            {pending ? 'Reading…' : 'Suggest goals'}
+          </button>
+          {result && !result.ok ? <p className="w-full text-sm text-mist">{result.error}</p> : null}
         </div>
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          {SEASONS.map((s) => (
-            <button key={s.id} type="button" aria-pressed={draft.seasons.includes(s.id)} onClick={() => toggleSeason(s.id)} className="chip h-8 text-[13px]">
-              {s.label}
-            </button>
-          ))}
-          <label className="ml-auto flex items-center gap-2 text-sm text-mist">
-            <input
-              type="number"
-              min={1}
-              max={60}
-              className="field h-8 w-16 px-2 text-sm"
-              value={draft.hoursPerWeek}
-              onChange={(e) => setDraft({ ...draft, hoursPerWeek: Math.max(1, Math.min(60, Number(e.target.value) || 1)) })}
-              aria-label="Hours per week"
-            />
-            hrs / week
-          </label>
-        </div>
-        <button
-          type="button"
-          disabled={!valid || value.length >= 8}
-          onClick={() => {
-            onChange([...value, { ...draft, name: draft.name.trim() }])
-            setDraft({ name: '', kind: 'sport', seasons: [], hoursPerWeek: 10 })
-          }}
-          className="btn btn-ghost btn-sm mt-3"
-        >
-          <IconPlus size={14} /> Add commitment
-        </button>
-      </div>
+      )}
     </div>
   )
 }

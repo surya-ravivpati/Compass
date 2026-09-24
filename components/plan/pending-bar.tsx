@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import type { Route } from 'next'
 import { courseName, joinAnd, type Catalog, type EditPreview } from '@/lib/engine'
-import { IconAlert, IconBranch } from '@/components/ui/icons'
+import { IconAlert, IconBranch, IconCheckCircle } from '@/components/ui/icons'
 
 /**
  * A staged change and its consequences. Nothing is applied until the student
@@ -25,9 +25,12 @@ export function PendingBar({
   onRevert: () => void
 }) {
   const affectedNames = [...new Set(preview.affected.map((a) => courseName(catalog, a.courseId)))]
-  const headline = affectedNames.length
-    ? `${preview.summary} affects ${joinAnd(affectedNames)}.`
-    : `${preview.summary} creates ${preview.introduced.length === 1 ? 'a conflict' : `${preview.introduced.length} conflicts`}.`
+  const clean = preview.introduced.length === 0
+  const headline = clean
+    ? `${preview.summary}: no conflicts.`
+    : affectedNames.length
+      ? `${preview.summary} affects ${joinAnd(affectedNames)}.`
+      : `${preview.summary} creates ${preview.introduced.length === 1 ? 'a conflict' : `${preview.introduced.length} conflicts`}.`
   const messages = preview.introduced.slice(0, 3).map((f) => f.message)
   const more = preview.introduced.length - messages.length
   const edit = preview.edit
@@ -43,7 +46,7 @@ export function PendingBar({
     <div role="alertdialog" aria-labelledby="pending-title" aria-describedby="pending-body" className="fixed inset-x-3 bottom-20 z-40 mx-auto max-w-[760px] animate-rise lg:bottom-6">
       <div className="rounded-2xl border border-line-strong bg-graphite/95 p-4 shadow-2xl shadow-black/50 backdrop-blur md:p-5">
         <p id="pending-title" className="flex items-start gap-2.5 text-[15px] font-medium">
-          <IconAlert className="mt-0.5 shrink-0 text-warn" />
+          {clean ? <IconCheckCircle className="mt-0.5 shrink-0 text-ok" /> : <IconAlert className="mt-0.5 shrink-0 text-warn" />}
           {headline}
         </p>
         <div id="pending-body" className="mt-2 space-y-1.5 pl-7 text-sm text-mist">
@@ -59,8 +62,8 @@ export function PendingBar({
               Apply with adjustments
             </button>
           ) : null}
-          <button type="button" disabled={busy} onClick={onKeep} className="btn btn-ghost btn-sm">
-            Keep my change
+          <button type="button" disabled={busy} onClick={onKeep} className={`btn btn-sm ${clean ? 'btn-signal' : 'btn-ghost'}`}>
+            {clean ? 'Apply' : 'Keep my change'}
           </button>
           <button type="button" disabled={busy} onClick={onRevert} className="btn btn-ghost btn-sm">
             Revert

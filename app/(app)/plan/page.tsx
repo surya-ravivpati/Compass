@@ -10,6 +10,7 @@ export default async function PlanPage(props: PageProps<'/plan'>) {
   const search = await props.searchParams
   const planId = typeof search.plan === 'string' ? search.plan : undefined
   const course = typeof search.course === 'string' ? search.course : undefined
+  const moveTo = typeof search.moveTo === 'string' && /^[0-7]$/.test(search.moveTo) ? Number(search.moveTo) : null
   const ws = await loadWorkspace(planId)
   const db = await getDb()
   const versions = await listVersions(db, ws.viewer.student.id, ws.plan.id)
@@ -30,6 +31,7 @@ export default async function PlanPage(props: PageProps<'/plan'>) {
         plans={ws.plans.map((p) => ({ id: p.id, name: p.name, kind: p.kind }))}
         versions={versions.map((v) => ({ id: v.id, version: v.version, summary: v.summary, createdAt: v.createdAt.toISOString(), validationStatus: v.validationStatus }))}
         initialSelected={initial ? `${initial.courseId}@${initial.term}` : null}
+        initialPreview={course && moveTo !== null ? { courseId: course, toTerm: moveTo } : null}
       />
     </main>
   )

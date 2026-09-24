@@ -29,15 +29,14 @@ export function CoursePicker({
   const [query, setQuery] = useState('')
   const listId = useId()
   const fall = (grade - 9) * 2
-  const chosenIds = new Set(value.map((v) => v.courseId))
   const matches = useMemo(() => {
     const q = query.trim().toLowerCase()
     if (!q) return []
+    const chosen = new Set(value.map((v) => v.courseId))
     return courses
-      .filter((c) => !chosenIds.has(c.id) && c.name.toLowerCase().includes(q))
+      .filter((c) => !chosen.has(c.id) && c.name.toLowerCase().includes(q))
       .sort((a, b) => Number(!a.grades.includes(grade)) - Number(!b.grades.includes(grade)) || a.name.localeCompare(b.name))
       .slice(0, 8)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, courses, grade, value])
 
   const add = (c: Course) => {

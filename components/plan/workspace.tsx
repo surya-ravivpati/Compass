@@ -51,6 +51,8 @@ export interface WorkspaceProps {
   plans: PlanSummaryItem[]
   versions: VersionItem[]
   initialSelected?: string | null
+  /** A move proposed elsewhere (Compass AI): staged for review, never applied on load. */
+  initialPreview?: { courseId: string; toTerm: number } | null
 }
 
 type Toast = { message: string; undo?: () => void; tone?: 'error' }
@@ -135,6 +137,21 @@ export function PlanWorkspace(props: WorkspaceProps) {
   useEffect(() => {
     commitRef.current = commit
   }, [commit])
+
+  // A proposal opened from Compass AI is always staged for the student to review.
+  const proposal = props.initialPreview
+  const [stagedProposal, setStagedProposal] = useState(false)
+  if (proposal && !stagedProposal) {
+    setStagedProposal(true)
+    const placement = placements.find((p) => p.courseId === proposal.courseId && p.status === 'planned')
+    if (placement && placement.term !== proposal.toTerm) {
+      try {
+        setPending(previewEdit(catalog, student, plan, { kind: 'move', courseId: proposal.courseId, fromTerm: placement.term, toTerm: proposal.toTerm }, props.preferences))
+      } catch {
+        // An invalid proposal is simply not staged.
+      }
+    }
+  }
 
   /** Every edit is previewed first; only clean edits apply straight away. */
   const requestEdit = useCallback(
@@ -338,7 +355,8 @@ export function PlanWorkspace(props: WorkspaceProps) {
           ))}
         <span className="ml-auto text-xs text-fog">
           {errors.length ? `${errors.length} conflict${errors.length === 1 ? '' : 's'}` : 'No conflicts'}
-          {warnings.length ? ` · ${warnings.length} to review` : ''} · Drag a course, or select it and press Alt + ←/→
+          {warnings.length ? ` · ${warnings.length} to review` : ''}
+          <span className="hidden lg:inline"> · Drag a course, or select it and press Alt + ←/→</span>
         </span>
       </section>
 
@@ -346,7 +364,7 @@ export function PlanWorkspace(props: WorkspaceProps) {
         <div className="min-w-0">
           {view === 'map' ? (
             <div className="surface p-2 md:p-3">
-              <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragCancel={() => setDragging(null)}>
+              <DndContext id="plan-map" sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragCancel={() => setDragging(null)}>
                 <PathMap
                   catalog={catalog}
                   placements={placements}

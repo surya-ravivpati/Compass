@@ -227,3 +227,26 @@ describe('students already partway through high school', () => {
     expect(termOf(r.plan, 'ap-computer-science-principles')).toBe(0)
   })
 })
+
+describe('students with fewer credits behind them', () => {
+  // A sophomore in the middle of 10th grade with a light record: six courses
+  // in 9th grade, five and a half in 10th.
+  const history = [
+    ...preHighSchool('algebra-1'),
+    ...(['honors-english-9', 'geometry', 'biology', 'world-history', 'spanish-1', 'physical-education'] as const).map((courseId) => ({ courseId, term: 0, status: 'completed' as const })),
+    ...(['honors-english-10', 'algebra-2', 'chemistry', 'spanish-2'] as const).map((courseId) => ({ courseId, term: 2, status: 'in-progress' as const })),
+    { courseId: 'health', term: 2, status: 'in-progress' as const },
+  ]
+
+  it('raises the load toward the school maximum to reach graduation credits, and says so', () => {
+    const r = generatePlan({ catalog: demo, student: { startTerm: 4 }, history, preferences: prefs({ rigor: 'challenging', goals: ['medicine'] }) })
+    expect(r.status).toBe('valid')
+    expect(r.validation.progress.total.remaining).toBe(0)
+    expect(r.notes[0]).toMatch(/^To reach the 24 credits your school requires, Compass planned 7 courses in /)
+  })
+
+  it('does not call electives unreachable when seats remain', () => {
+    const r = generatePlan({ catalog: demo, student: { startTerm: 4 }, history, preferences: prefs() })
+    expect(r.validation.findings.filter((f) => f.code === 'requirement-credits-unreachable')).toEqual([])
+  })
+})

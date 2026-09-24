@@ -26,6 +26,8 @@ export interface FillResult {
   unplaced: string[]
   /** Terms left below the school's minimum, with why. */
   shortTerms: { term: TermIndex; count: number; explanation: string }[]
+  /** Terms filled past the student's preferred load to reach graduation credits. */
+  raisedTerms: TermIndex[]
 }
 
 /**
@@ -85,15 +87,43 @@ export function fillElectives(args: FillArgs): FillResult {
     }
   }
 
-  // 3. Electives, year by year.
-  for (let year = Math.floor(startTerm / 2); year < TERM_COUNT / 2; year++) {
+  // 3. Electives, year by year, to the student's preferred load.
+  const startYear = Math.floor(startTerm / 2)
+  for (let year = startYear; year < TERM_COUNT / 2; year++) fillYear(year, target)
+
+  // 4. If graduation still needs credits, use the school's maximum load --
+  //    and say so, because it's heavier than the student asked for.
+  const raisedTerms: TermIndex[] = []
+  if (target < max) {
+    for (let year = startYear; year < TERM_COUNT / 2; year++) {
+      if (allocateRequirements(catalog, ctx.placements).total.remaining <= 0) break
+      const before = [ctx.occupancy[year * 2]!, ctx.occupancy[year * 2 + 1]!]
+      fillYear(year, max)
+      if (ctx.occupancy[year * 2]! > before[0]!) raisedTerms.push(year * 2)
+      if (ctx.occupancy[year * 2 + 1]! > before[1]!) raisedTerms.push(year * 2 + 1)
+    }
+  }
+
+  const shortTerms: FillResult['shortTerms'] = []
+  for (let t = startTerm; t < TERM_COUNT; t++) {
+    const count = ctx.occupancy[t]!
+    if (count >= min) continue
+    shortTerms.push({
+      term: t,
+      count,
+      explanation: `Only ${count} courses fit ${termLabel(t)}: no other course in your school's catalog is open to you then without breaking a prerequisite, grade, or season rule.`,
+    })
+  }
+  return { unplaced, shortTerms, raisedTerms }
+
+  function fillYear(year: number, load: number) {
     const fall = year * 2
     const spring = fall + 1
     // While both semesters have room, compare the best full-year elective
     // with the best semester one, so a strong semester course (a fall-only
     // capstone, say) isn't crowded out by a merely available year course.
     for (;;) {
-      if (ctx.occupancy[fall]! >= target || ctx.occupancy[spring]! >= target) break
+      if (ctx.occupancy[fall]! >= load || ctx.occupancy[spring]! >= load) break
       const yearLong = bestElective(fall, 2)
       const fallSem = bestElective(fall, 1)
       const springSem = bestElective(spring, 1)
@@ -109,7 +139,7 @@ export function fillElectives(args: FillArgs): FillResult {
       }
     }
     for (const term of [fall, spring]) {
-      while (ctx.occupancy[term]! < target) {
+      while (ctx.occupancy[term]! < load) {
         const best = bestElective(term, 1)
         if (!best) break
         place(best, term)
@@ -122,18 +152,6 @@ export function fillElectives(args: FillArgs): FillResult {
       if (best) place(best, fall)
     }
   }
-
-  const shortTerms: FillResult['shortTerms'] = []
-  for (let t = startTerm; t < TERM_COUNT; t++) {
-    const count = ctx.occupancy[t]!
-    if (count >= min) continue
-    shortTerms.push({
-      term: t,
-      count,
-      explanation: `Only ${count} courses fit ${termLabel(t)}: no other course in your school's catalog is open to you then without breaking a prerequisite, grade, or season rule.`,
-    })
-  }
-  return { unplaced, shortTerms }
 
   function rank(pool: Course[], from: TermIndex): Course[] {
     return [...pool].sort(
