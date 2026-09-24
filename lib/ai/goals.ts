@@ -36,7 +36,8 @@ export async function interpretGoals(
         required: ['goals', 'interests'],
       },
       temperature: 0,
-      maxOutputTokens: 300,
+      thinking: 'minimal',
+      maxOutputTokens: 1024,
     },
     options,
   )

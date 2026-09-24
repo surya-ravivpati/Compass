@@ -543,6 +543,13 @@ function Row({ label, value }: { label: string; value: string }) {
 
 
 /** Compass AI reads the student's own words and suggests goals; the student decides. */
+/** Goals first, then the interests they don't already name ("arts" under "The arts"). */
+function suggestionLabels(goals: GoalId[], interests: string[]): string[] {
+  const labels = goals.map((g) => GOALS.find((x) => x.id === g)?.label ?? g)
+  const named = labels.join(' ').toLowerCase()
+  return [...labels, ...interests.map((i) => i.replace(/-/g, ' ')).filter((i) => !named.includes(i.toLowerCase()))]
+}
+
 function GoalSuggestions({
   schoolId,
   text,
@@ -564,7 +571,7 @@ function GoalSuggestions({
             <p className="text-sm">
               Compass AI suggests:{' '}
               <span className="text-mist">
-                {[...result.goals.map((g) => GOALS.find((x) => x.id === g)?.label ?? g), ...result.interests.map((i) => i.replace(/-/g, ' '))].join(', ')}
+                {suggestionLabels(result.goals, result.interests).join(', ')}
               </span>
             </p>
             <div className="mt-2 flex gap-2">

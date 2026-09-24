@@ -77,21 +77,33 @@ export async function extractCatalog(
   const raw: RawCourse[] = []
   const requirements: DraftRequirement[] = []
   const chunks = Math.ceil(pages.length / size)
-  for (let c = 0; c < chunks; c++) {
-    const start = c * size
+  const read = async (start: number, count: number): Promise<void> => {
     const text = pages
-      .slice(start, start + size)
+      .slice(start, start + count)
       .map((t, i) => `=== Page ${start + i + 1} ===\n${t}`)
       .join('\n\n')
-    const response = await withRetry(() =>
-      generateContent(
-        { system: PROMPT, contents: [{ role: 'user', parts: [{ text }] }], json: SCHEMA, temperature: 0, maxOutputTokens: 8000 },
-        options,
-      ),
-    )
-    const parsed = JSON.parse(response.text) as { courses?: RawCourse[]; requirements?: DraftRequirement[] }
-    raw.push(...(parsed.courses ?? []))
-    requirements.push(...(parsed.requirements ?? []))
+    try {
+      const response = await withRetry(() =>
+        generateContent(
+          { system: PROMPT, contents: [{ role: 'user', parts: [{ text }] }], json: SCHEMA, temperature: 0, thinking: 'low', maxOutputTokens: 32768 },
+          { ...options, timeoutMs: options.timeoutMs ?? 180_000 },
+        ),
+      )
+      const parsed = JSON.parse(response.text) as { courses?: RawCourse[]; requirements?: DraftRequirement[] }
+      raw.push(...(parsed.courses ?? []))
+      requirements.push(...(parsed.requirements ?? []))
+    } catch (err) {
+      // A dense chunk can outgrow one answer: read its pages one at a time.
+      if (err instanceof AiError && err.kind === 'incomplete' && count > 1) {
+        for (let i = 0; i < count; i++) await read(start + i, 1)
+        return
+      }
+      throw err
+    }
+  }
+  for (let c = 0; c < chunks; c++) {
+    const start = c * size
+    await read(start, Math.min(size, pages.length - start))
     options.onProgress?.(c + 1, chunks)
   }
   return {

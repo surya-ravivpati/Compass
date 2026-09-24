@@ -1,6 +1,6 @@
 import { GOAL_LABELS, type Preferences } from '../engine/index.ts'
 
-export const PROMPT_VERSION = 'v1'
+export const PROMPT_VERSION = 'v2'
 
 export interface StudentContext {
   firstName: string | null
@@ -46,6 +46,7 @@ export const COURSE_EXPLAINER_PROMPT = [
   'You write a short, plain-language guide to one high school course for a fifteen-year-old.',
   'Use ONLY the course record provided. Do not add prerequisites, credits, grade levels, availability, or requirements that are not in the record. Do not predict grades, admissions, or careers.',
   'If the record lacks a detail, leave it out rather than guessing.',
+  'You do not know anything about the reader: never say what they have taken, finished, or qualify for. Prerequisites belong to the catalog section, not to "good fit" lines.',
 ].join('\n')
 
 export const GOAL_INTERPRETER_PROMPT = [

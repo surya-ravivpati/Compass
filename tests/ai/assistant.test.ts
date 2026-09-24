@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { askCompass } from '../../lib/ai/assistant.ts'
 import { explainCourse } from '../../lib/ai/explainer.ts'
+import { generateContent } from '../../lib/ai/gemini.ts'
 import { interpretGoals } from '../../lib/ai/goals.ts'
 import { systemPrompt, type StudentContext } from '../../lib/ai/prompts.ts'
 import { executeTool, parseTerm, resolveCourse, type ToolContext } from '../../lib/ai/tools.ts'
@@ -39,6 +40,41 @@ function fakeGemini(turns: object[][]) {
   }) as unknown as typeof fetch
   return { fetchImpl, requests }
 }
+
+describe('Gemini client', () => {
+  const request = { system: 's', contents: [{ role: 'user' as const, parts: [{ text: 'q' }] }] }
+  const reply = (body: object, status = 200) => new Response(JSON.stringify(body), { status })
+  const answer = (text: string, finishReason = 'STOP') => ({ candidates: [{ content: { role: 'model', parts: [{ text }] }, finishReason }] })
+
+  it('refuses an answer the output budget cut off, instead of passing on broken JSON', async () => {
+    const fetchImpl = vi.fn(async () => reply(answer('{"summary": "AP Calcul', 'MAX_TOKENS'))) as unknown as typeof fetch
+    await expect(generateContent({ ...request, json: { type: 'OBJECT' } }, { apiKey: 'k', fetchImpl })).rejects.toMatchObject({ kind: 'incomplete' })
+  })
+
+  it('asks for a thinking level, and drops it for a model that does not offer it', async () => {
+    const bodies: { generationConfig: { thinkingConfig?: unknown } }[] = []
+    const fetchImpl = vi.fn(async (_url: string, init: RequestInit) => {
+      const body = JSON.parse(String(init.body))
+      bodies.push(body)
+      return body.generationConfig.thinkingConfig
+        ? reply({ error: { code: 400, message: 'Thinking level is not supported for this model.' } }, 400)
+        : reply(answer('OK'))
+    }) as unknown as typeof fetch
+    const options = { apiKey: 'k', model: 'test-model-without-levels', fetchImpl }
+    expect((await generateContent({ ...request, thinking: 'minimal' }, options)).text).toBe('OK')
+    expect(bodies.map((b) => b.generationConfig.thinkingConfig)).toEqual([{ thinkingLevel: 'minimal' }, undefined])
+    // Remembered: the next request skips the level straight away.
+    await generateContent({ ...request, thinking: 'minimal' }, options)
+    expect(bodies).toHaveLength(3)
+    expect(bodies[2]!.generationConfig.thinkingConfig).toBeUndefined()
+  })
+
+  it('does not retry other bad requests', async () => {
+    const fetchImpl = vi.fn(async () => reply({ error: { code: 400, message: 'Invalid schema.' } }, 400)) as unknown as typeof fetch
+    await expect(generateContent({ ...request, thinking: 'low' }, { apiKey: 'k', model: 'other-model', fetchImpl })).rejects.toMatchObject({ kind: 'http', status: 400 })
+    expect(fetchImpl).toHaveBeenCalledTimes(1)
+  })
+})
 
 describe('Compass AI', () => {
   it('reports itself offline when no key is configured', async () => {

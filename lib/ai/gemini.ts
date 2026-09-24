@@ -40,8 +40,17 @@ export interface GenerateRequest {
   /** Ask for JSON matching this schema instead of free text. */
   json?: Schema
   temperature?: number
+  /** Includes the model's thinking: a thinking model spends part of it before answering. */
   maxOutputTokens?: number
+  /**
+   * How much to think first. Small structured tasks ask for little, so the
+   * answer isn't crowded out; a model that doesn't offer the level uses its
+   * default instead.
+   */
+  thinking?: ThinkingLevel
 }
+
+export type ThinkingLevel = 'minimal' | 'low' | 'medium' | 'high'
 
 export interface GenerateResponse {
   /** The model turn, verbatim -- echo it back unchanged to keep thought signatures. */
@@ -51,7 +60,7 @@ export interface GenerateResponse {
   finishReason?: string
 }
 
-export type AiErrorKind = 'not-configured' | 'http' | 'timeout' | 'blocked' | 'empty' | 'network'
+export type AiErrorKind = 'not-configured' | 'http' | 'timeout' | 'blocked' | 'empty' | 'incomplete' | 'network'
 
 export class AiError extends Error {
   constructor(
@@ -70,38 +79,56 @@ export interface ClientOptions {
   timeoutMs?: number
 }
 
+/** Thinking levels a model has refused, so each is only tried once per server. */
+const unsupportedThinking = new Set<string>()
+
 export async function generateContent(req: GenerateRequest, options: ClientOptions = {}): Promise<GenerateResponse> {
   const apiKey = options.apiKey ?? process.env.GEMINI_API_KEY
   if (!apiKey) throw new AiError('not-configured', 'Compass AI is not configured on this server.')
   const model = options.model ?? aiModel()
   const doFetch = options.fetchImpl ?? fetch
-  const body: Record<string, unknown> = {
-    systemInstruction: { parts: [{ text: req.system }] },
-    contents: req.contents,
-    generationConfig: {
-      temperature: req.temperature ?? 0.3,
-      maxOutputTokens: req.maxOutputTokens ?? 1200,
-      ...(req.json ? { responseMimeType: 'application/json', responseSchema: req.json } : {}),
-    },
-  }
-  if (req.tools?.length) {
-    body.tools = [{ functionDeclarations: req.tools }]
-    body.toolConfig = { functionCallingConfig: { mode: 'AUTO' } }
+  const thinkingKey = req.thinking ? `${model}:${req.thinking}` : ''
+  const body = (withThinking: boolean): string =>
+    JSON.stringify({
+      systemInstruction: { parts: [{ text: req.system }] },
+      contents: req.contents,
+      generationConfig: {
+        temperature: req.temperature ?? 0.3,
+        maxOutputTokens: req.maxOutputTokens ?? 4096,
+        ...(req.json ? { responseMimeType: 'application/json', responseSchema: req.json } : {}),
+        ...(withThinking && req.thinking ? { thinkingConfig: { thinkingLevel: req.thinking } } : {}),
+      },
+      ...(req.tools?.length
+        ? { tools: [{ functionDeclarations: req.tools }], toolConfig: { functionCallingConfig: { mode: 'AUTO' } } }
+        : {}),
+    })
+  const send = async (withThinking: boolean): Promise<Response> => {
+    try {
+      return await doFetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-goog-api-key': apiKey },
+        body: body(withThinking),
+        signal: AbortSignal.timeout(options.timeoutMs ?? 25_000),
+      })
+    } catch (err) {
+      if (err instanceof Error && (err.name === 'TimeoutError' || err.name === 'AbortError')) {
+        throw new AiError('timeout', 'Compass AI took too long to respond.')
+      }
+      throw new AiError('network', 'Compass AI could not be reached.')
+    }
   }
 
-  let res: Response
-  try {
-    res = await doFetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-goog-api-key': apiKey },
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(options.timeoutMs ?? 25_000),
-    })
-  } catch (err) {
-    if (err instanceof Error && (err.name === 'TimeoutError' || err.name === 'AbortError')) {
-      throw new AiError('timeout', 'Compass AI took too long to respond.')
+  const tryThinking = !!req.thinking && !unsupportedThinking.has(thinkingKey)
+  let res = await send(tryThinking)
+  if (tryThinking && res.status === 400) {
+    // Models differ in which thinking levels they offer (Gemini 2.5 has none).
+    const detail = await res.text().catch(() => '')
+    if (/thinking/i.test(detail)) {
+      unsupportedThinking.add(thinkingKey)
+      res = await send(false)
+    } else {
+      throw new AiError('http', `Compass AI returned an error (${res.status}).`, res.status)
     }
-    throw new AiError('network', 'Compass AI could not be reached.')
   }
   if (!res.ok) {
     throw new AiError('http', `Compass AI returned an error (${res.status}).`, res.status)
@@ -112,6 +139,8 @@ export async function generateContent(req: GenerateRequest, options: ClientOptio
   }
   if (data.promptFeedback?.blockReason) throw new AiError('blocked', 'Compass AI could not answer that request.')
   const candidate = data.candidates?.[0]
+  // A cut-off answer is broken JSON or a half sentence: never pass it on.
+  if (candidate?.finishReason === 'MAX_TOKENS') throw new AiError('incomplete', 'Compass AI’s answer was cut off.')
   const content = candidate?.content
   if (!content?.parts?.length) {
     if (candidate?.finishReason === 'SAFETY') throw new AiError('blocked', 'Compass AI could not answer that request.')

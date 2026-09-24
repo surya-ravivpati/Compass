@@ -56,12 +56,19 @@ export async function explainCourse(
         properties: {
           summary: { type: 'STRING', description: 'Two sentences on what the course is.' },
           what_you_do: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Up to four concrete things students do.' },
-          good_fit_if: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Up to three kinds of students who tend to enjoy it.' },
+          good_fit_if: {
+            type: 'ARRAY',
+            items: { type: 'STRING' },
+            description: 'Up to three interests or goals of students who tend to enjoy it, like "You enjoy …". Never prerequisites or claims about what the reader has taken.',
+          },
         },
         required: ['summary', 'what_you_do', 'good_fit_if'],
       },
       temperature: 0.4,
-      maxOutputTokens: 600,
+      // A rewrite of the catalog record needs no deliberation, and thinking
+      // tokens count against the output budget.
+      thinking: 'minimal',
+      maxOutputTokens: 2048,
     },
     { ...options, model },
   )
