@@ -1,0 +1,279 @@
+{
+  "school": {
+    "id": "stevenson",
+    "name": "School name",
+    "load": {
+      "min": 6,
+      "max": 7
+    },
+    "totalCredits": 0,
+    "preHighSchoolCredit": false
+  },
+  "departments": [
+    {
+      "id": "fine-arts-media-arts",
+      "name": "FINE ARTS—MEDIA ARTS",
+      "order": 0,
+      "lane": false,
+      "match": [
+        "FINE ARTS—MEDIA ARTS"
+      ]
+    },
+    {
+      "id": "student-learning-programs",
+      "name": "STUDENT LEARNING PROGRAMS",
+      "order": 1,
+      "lane": false,
+      "match": [
+        "STUDENT LEARNING PROGRAMS"
+      ]
+    },
+    {
+      "id": "applied-arts-business-education",
+      "name": "APPLIED ARTS–BUSINESS EDUCATION",
+      "order": 2,
+      "lane": false,
+      "match": [
+        "APPLIED ARTS–BUSINESS EDUCATION"
+      ]
+    },
+    {
+      "id": "fine-arts-theatre",
+      "name": "FINE ARTS—THEATRE",
+      "order": 3,
+      "lane": false,
+      "match": [
+        "FINE ARTS—THEATRE"
+      ]
+    },
+    {
+      "id": "engineering",
+      "name": "ENGINEERING",
+      "order": 4,
+      "lane": false,
+      "match": [
+        "ENGINEERING"
+      ]
+    },
+    {
+      "id": "fine-arts-visual-arts",
+      "name": "FINE ARTS—VISUAL ARTS",
+      "order": 5,
+      "lane": false,
+      "match": [
+        "FINE ARTS—VISUAL ARTS"
+      ]
+    },
+    {
+      "id": "fine-arts-music",
+      "name": "FINE ARTS—MUSIC",
+      "order": 6,
+      "lane": false,
+      "match": [
+        "FINE ARTS—MUSIC"
+      ]
+    },
+    {
+      "id": "communication-arts",
+      "name": "COMMUNICATION ARTS",
+      "order": 7,
+      "lane": false,
+      "match": [
+        "COMMUNICATION ARTS"
+      ]
+    },
+    {
+      "id": "mathematics",
+      "name": "MATHEMATICS",
+      "order": 8,
+      "lane": false,
+      "match": [
+        "MATHEMATICS"
+      ]
+    },
+    {
+      "id": "language-learning-spanish",
+      "name": "LANGUAGE LEARNING—SPANISH",
+      "order": 9,
+      "lane": false,
+      "match": [
+        "LANGUAGE LEARNING—SPANISH"
+      ]
+    },
+    {
+      "id": "physical-education",
+      "name": "PHYSICAL EDUCATION",
+      "order": 10,
+      "lane": false,
+      "match": [
+        "PHYSICAL EDUCATION"
+      ]
+    },
+    {
+      "id": "physical-welfare-physical-education-and-health-education",
+      "name": "PHYSICAL WELFARE–PHYSICAL EDUCATION AND HEALTH EDUCATION",
+      "order": 11,
+      "lane": false,
+      "match": [
+        "PHYSICAL WELFARE–PHYSICAL EDUCATION AND HEALTH EDUCATION"
+      ]
+    },
+    {
+      "id": "social-studies",
+      "name": "SOCIAL STUDIES",
+      "order": 12,
+      "lane": false,
+      "match": [
+        "SOCIAL STUDIES"
+      ]
+    },
+    {
+      "id": "art-history",
+      "name": "ART HISTORY",
+      "order": 13,
+      "lane": false,
+      "match": [
+        "ART HISTORY"
+      ]
+    },
+    {
+      "id": "science",
+      "name": "SCIENCE",
+      "order": 14,
+      "lane": false,
+      "match": [
+        "SCIENCE"
+      ]
+    },
+    {
+      "id": "language-learning-mandarin-chinese-and-spanish",
+      "name": "LANGUAGE LEARNING—MANDARIN CHINESE AND SPANISH",
+      "order": 15,
+      "lane": false,
+      "match": [
+        "LANGUAGE LEARNING—MANDARIN CHINESE AND SPANISH"
+      ]
+    },
+    {
+      "id": "computer-science-engineering-and-technology-cset-",
+      "name": "COMPUTER SCIENCE, ENGINEERING AND TECHNOLOGY (CSET)",
+      "order": 16,
+      "lane": false,
+      "match": [
+        "COMPUTER SCIENCE, ENGINEERING AND TECHNOLOGY (CSET)"
+      ]
+    },
+    {
+      "id": "language-learning",
+      "name": "LANGUAGE LEARNING",
+      "order": 17,
+      "lane": false,
+      "match": [
+        "LANGUAGE LEARNING"
+      ]
+    },
+    {
+      "id": "language-learning-latin-and-mandarin-chinese",
+      "name": "LANGUAGE LEARNING—LATIN AND MANDARIN CHINESE",
+      "order": 18,
+      "lane": false,
+      "match": [
+        "LANGUAGE LEARNING—LATIN AND MANDARIN CHINESE"
+      ]
+    },
+    {
+      "id": "applied-arts-technology-campus",
+      "name": "APPLIED ARTS—TECHNOLOGY CAMPUS",
+      "order": 19,
+      "lane": false,
+      "match": [
+        "APPLIED ARTS—TECHNOLOGY CAMPUS"
+      ]
+    },
+    {
+      "id": "business-education",
+      "name": "BUSINESS EDUCATION",
+      "order": 20,
+      "lane": false,
+      "match": [
+        "BUSINESS EDUCATION"
+      ]
+    },
+    {
+      "id": "family-and-consumer-sciences",
+      "name": "FAMILY AND CONSUMER SCIENCES",
+      "order": 21,
+      "lane": false,
+      "match": [
+        "FAMILY AND CONSUMER SCIENCES"
+      ]
+    },
+    {
+      "id": "fine-arts-dance",
+      "name": "FINE ARTS—DANCE",
+      "order": 22,
+      "lane": false,
+      "match": [
+        "FINE ARTS—DANCE"
+      ]
+    },
+    {
+      "id": "english-language-development-eld-department",
+      "name": "ENGLISH LANGUAGE DEVELOPMENT (ELD) DEPARTMENT",
+      "order": 23,
+      "lane": false,
+      "match": [
+        "ENGLISH LANGUAGE DEVELOPMENT (ELD) DEPARTMENT"
+      ]
+    },
+    {
+      "id": "applied-arts-driver-education",
+      "name": "APPLIED ARTS–DRIVER EDUCATION",
+      "order": 24,
+      "lane": false,
+      "match": [
+        "APPLIED ARTS–DRIVER EDUCATION"
+      ]
+    },
+    {
+      "id": "language-learning-hebrew",
+      "name": "LANGUAGE LEARNING— HEBREW",
+      "order": 25,
+      "lane": false,
+      "match": [
+        "LANGUAGE LEARNING— HEBREW"
+      ]
+    },
+    {
+      "id": "language-learning-mandarin-chinese",
+      "name": "LANGUAGE LEARNING—MANDARIN CHINESE",
+      "order": 26,
+      "lane": false,
+      "match": [
+        "LANGUAGE LEARNING—MANDARIN CHINESE"
+      ]
+    },
+    {
+      "id": "special-education-services",
+      "name": "SPECIAL EDUCATION SERVICES",
+      "order": 27,
+      "lane": false,
+      "match": [
+        "SPECIAL EDUCATION SERVICES"
+      ]
+    },
+    {
+      "id": "applied-arts-family-and-consumer-sciences",
+      "name": "APPLIED ARTS–FAMILY AND CONSUMER SCIENCES",
+      "order": 28,
+      "lane": false,
+      "match": [
+        "APPLIED ARTS–FAMILY AND CONSUMER SCIENCES"
+      ]
+    }
+  ],
+  "requirements": [],
+  "courses": {},
+  "policies": [],
+  "mathPlacement": []
+}
