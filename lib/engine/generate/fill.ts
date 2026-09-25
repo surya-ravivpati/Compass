@@ -5,7 +5,7 @@ import { allocateRequirements, countsTowardAt } from '../requirements.ts'
 import { placementPhrase, termLabel, yearOfTerm } from '../terms.ts'
 import { TERM_COUNT, type Course, type TermIndex } from '../types.ts'
 import { emptyOverlay, infeasibility, type PlanningContext } from './context.ts'
-import { ANCHOR_KEPT, ANCHOR_SAME_TERM, reasonKey, type PlacementReason } from './lanes.ts'
+import { ANCHOR_KEPT, ANCHOR_SAME_TERM, reasonKey, sequenceContinuity, type PlacementReason } from './lanes.ts'
 import { interestScore, matchedGoals, rigorScore, workloadScore, type PreferenceModel } from './preferences.ts'
 
 export interface FillArgs {
@@ -192,6 +192,12 @@ export function fillElectives(args: FillArgs): FillResult {
     const electivesInDepartment = sameDepartment.filter((p) => !args.laneCourseIds.has(p.courseId)).length
     if (sameDepartment.length === 0) s += 1
     if (model.explore) s += electivesInDepartment === 0 ? 3 : -2 * electivesInDepartment
+    // A first language level is worth starting only when the next level has
+    // room the year after: French 1 now and French 2 two years later is a gap.
+    if (course.sequence?.step === 1) {
+      const next = term + course.durationTerms
+      if (next + 1 >= TERM_COUNT || ctx.occupancy[next]! >= target || ctx.occupancy[next + 1]! >= target) s -= 6
+    }
     // Don't start a second language (or any second sequence) as a filler.
     if (course.sequence && course.sequence.step === 1) {
       const other = ctx.placements.some((p) => {
@@ -207,11 +213,13 @@ export function fillElectives(args: FillArgs): FillResult {
     }
     // Ensembles and courses with a recommended background are for students
     // who asked for them.
-    if (!interested && ((course.maxEnrollments ?? 1) > 1 || course.notes?.length)) s -= 2
+    if (!interested && ((course.maxEnrollments ?? 1) > 1 || course.expectsBackground)) s -= 2
     // Building on an earlier elective makes a path, not a pile.
     const spans = ctx.spans
     const result = evaluatePrerequisites(course, term, spans)
     if (result.groups.some((g) => g.match && !args.laneCourseIds.has(g.match.span.courseId))) s += 2.5
+    // A language level after a gap year is harder to pick up again.
+    if (sequenceContinuity(catalog, spans, course, term) < 0) s -= 3
     if (course.prerequisites.length === 0 && interestScore(model, course) > 0) {
       const opens = [...descendants(catalog, course.id)].filter((id) => interestScore(model, catalog.courses.get(id)!) > 0)
       if (opens.length > 0) s += 1

@@ -15,6 +15,13 @@
       "when": 1790250625817,
       "tag": "0001_omniscient_quicksilver",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790252151530,
+      "tag": "0002_elite_shriek",
+      "breakpoints": true
     }
   ]
 }

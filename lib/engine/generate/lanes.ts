@@ -1,6 +1,6 @@
 import type { Catalog } from '../catalog.ts'
 import { ancestors, descendants } from '../graph.ts'
-import { evaluatePrerequisites, overlaySpans } from '../prereqs.ts'
+import { evaluatePrerequisites, overlaySpans, type SpanLookup } from '../prereqs.ts'
 import { allocateRequirements, countsTowardAt } from '../requirements.ts'
 import { occupiedTerms, yearOfTerm } from '../terms.ts'
 import { TERM_COUNT, type Course, type MustInclude, type Placement, type Policy, type Requirement, type TermIndex } from '../types.ts'
@@ -28,6 +28,8 @@ export interface Lane {
   sameSequence: boolean
   /** Score per credit beyond the requirement: how much the student wants more. */
   affinity: number
+  /** The part of `affinity` that isn't interest (college plans, rigor, balance). */
+  baseAffinity: number
 }
 
 export interface Track {
@@ -76,16 +78,17 @@ export function buildLanes(catalog: Catalog, model: PreferenceModel, fixed: Plac
     let interest = 0
     for (const tag of tags) interest += model.interests.get(tag) ?? 0
     interest = Math.min(interest, 2)
-    let affinity = -4 + 3 * interest
-    if (model.college && (department === 'science' || department === 'world-language')) affinity += 2
-    if (model.desiredLevel >= 1.8 && ['math', 'science', 'world-language', 'english'].includes(department)) affinity += 1.5
-    if (model.balanceFirst) affinity -= 1.5
+    let baseAffinity = -4
+    if (model.college && (department === 'science' || department === 'world-language')) baseAffinity += 2
+    if (model.desiredLevel >= 1.8 && ['math', 'science', 'world-language', 'english'].includes(department)) baseAffinity += 1.5
+    if (model.balanceFirst) baseAffinity -= 1.5
+    let affinity = baseAffinity + 3 * interest
     if (everyTerm) affinity = Math.max(affinity, 2)
     const lane: Lane = {
       id: req.id,
       requirement: req,
       department,
-      subject: catalog.departments.get(department)?.name.toLowerCase() ?? req.name.toLowerCase(),
+      subject: subjectName(catalog, department) ?? req.name.toLowerCase(),
       courseIds,
       everyTerm,
       ...(policy ? { everyTermPolicyLabel: policy.label } : {}),
@@ -93,6 +96,7 @@ export function buildLanes(catalog: Catalog, model: PreferenceModel, fixed: Plac
       missingGroups,
       sameSequence: !!req.sameSequence,
       affinity,
+      baseAffinity,
     }
     if (lane.deficit > 0 || lane.missingGroups.length > 0 || lane.everyTerm || lane.affinity > 0) lanes.push(lane)
   }
@@ -111,7 +115,7 @@ export function buildLanes(catalog: Catalog, model: PreferenceModel, fixed: Plac
       id: `policy:${policy.id}`,
       requirement: { id: `policy:${policy.id}`, name, description: policy.label, credits: 0, kind: 'category', source: policy.source },
       department: policy.department,
-      subject: name.toLowerCase(),
+      subject: subjectName(catalog, policy.department) ?? name.toLowerCase(),
       courseIds,
       everyTerm: true,
       everyTermPolicyLabel: policy.label,
@@ -119,9 +123,33 @@ export function buildLanes(catalog: Catalog, model: PreferenceModel, fixed: Plac
       missingGroups: [],
       sameSequence: false,
       affinity: 2,
+      baseAffinity: 2,
     })
   }
   return orderLanes(catalog, lanes)
+}
+
+/** A department's mid-sentence name: "math", "social studies", "English". */
+function subjectName(catalog: Catalog, departmentId: string): string | undefined {
+  const department = catalog.departments.get(departmentId)
+  return department ? (department.shortName ?? department.name.toLowerCase()) : undefined
+}
+
+/**
+ * The next level of a sequence right after the previous one (French 2 the
+ * year after French 1) is 1; after a gap it is -1; anything else is 0.
+ */
+export function sequenceContinuity(catalog: Catalog, spans: SpanLookup, course: Course, term: TermIndex): number {
+  if (!course.sequence || course.sequence.step <= 1) return 0
+  let last: number | undefined
+  for (const other of catalog.courses.values()) {
+    if (other.sequence?.id !== course.sequence.id || other.sequence.step >= course.sequence.step) continue
+    for (const span of spans.get(other.id) ?? []) {
+      if (span.start < term && (last === undefined || span.end > last)) last = span.end
+    }
+  }
+  if (last === undefined) return 0
+  return last >= term - 1 ? 1 : -1
 }
 
 function dominant(values: string[]): string {
@@ -144,12 +172,16 @@ function orderLanes(catalog: Catalog, lanes: Lane[]): Lane[] {
       }
     }
   }
+  // Among lanes whose prerequisites are placed, every-term lanes go first:
+  // they need a slot in every semester, so they get them before optional
+  // lanes fill up. A dependency cycle yields to the most constrained lane.
+  const constrained = (a: Lane, b: Lane) => Number(b.everyTerm) - Number(a.everyTerm) || b.deficit - a.deficit
   const ordered: Lane[] = []
   const done = new Set<string>()
   while (ordered.length < lanes.length) {
-    const next =
-      lanes.find((l) => !done.has(l.id) && [...deps.get(l.id)!].every((d) => done.has(d))) ??
-      lanes.find((l) => !done.has(l.id))!
+    const left = lanes.filter((l) => !done.has(l.id))
+    const ready = left.filter((l) => [...deps.get(l.id)!].every((d) => done.has(d)))
+    const next = ready.find((l) => l.everyTerm) ?? ready[0] ?? [...left].sort(constrained)[0]!
     ordered.push(next)
     done.add(next.id)
   }
@@ -210,6 +242,7 @@ function tracksFor(search: TrackSearch, preferredSequence: string | undefined): 
   const { catalog, ctx, lane, model, startTerm } = search
   const maxLoad = catalog.school.load.max
   const beamWidth = search.beamWidth ?? 40
+  const leveled = new Set([...catalog.courses.values()].filter((c) => c.level !== 'standard').map((c) => c.department))
   const laneSet = new Set(lane.courseIds)
 
   // Lane slots already held by history or pinned courses.
@@ -412,7 +445,6 @@ function tracksFor(search: TrackSearch, preferredSequence: string | undefined): 
     // A course that only counts from a later grade is no progress yet.
     const useful = countsTowardAt(course, lane.id, term) ? Math.min(course.credits, Math.max(0, open)) : 0
     score += useful * 12
-    score += (course.credits - useful) * lane.affinity
 
     if (group >= 0) {
       score += 15
@@ -436,8 +468,13 @@ function tracksFor(search: TrackSearch, preferredSequence: string | undefined): 
     if (laneStep?.match) {
       score += 2
       const prev = catalog.courses.get(laneStep.match.span.courseId)!
-      reasons.push({ kind: 'pathway', text: `The next step after ${prev.name} in your ${lane.subject} pathway.` })
+      // A lane several departments share names the course's own subject.
+      const subject = course.department === lane.department ? lane.subject : (subjectName(catalog, course.department) ?? lane.subject)
+      reasons.push({ kind: 'pathway', text: `The next step after ${prev.name} in your ${subject} pathway.` })
     }
+    // A same-sequence lane already ends at a gap year; elsewhere, the next
+    // language level is best the year after the last one.
+    if (!lane.sameSequence) score += 3 * sequenceContinuity(catalog, spans, course, term)
 
     if (lane.everyTerm && lane.everyTermPolicyLabel) {
       reasons.push({ kind: 'every-term', text: lane.everyTermPolicyLabel + '.' })
@@ -454,12 +491,13 @@ function tracksFor(search: TrackSearch, preferredSequence: string | undefined): 
     }
 
     // Rigor matters most in the core academic lanes; a fine-arts or PE credit
-    // is not where a student asked to be challenged.
-    const core = catalog.departments.get(course.department)?.lane ?? false
+    // is not where a student asked to be challenged, and a subject with no
+    // honors or AP courses offers no level to choose.
+    const core = (catalog.departments.get(course.department)?.lane ?? false) && leveled.has(course.department)
     const rigor = rigorScore(model, course, core ? 3 : 1)
     score += rigor
     if (core && model.desiredLevel >= 1.8) score += (course.workload - 3) * 0.8
-    if (course.notes?.length && interestScore(model, course) === 0) score -= 2.5
+    if (course.expectsBackground && interestScore(model, course) === 0) score -= 2.5
     if ((course.level === 'honors' || course.level === 'ap' || course.level === 'post-ap') && rigor > -1.5) {
       reasons.push({ kind: 'rigor', text: 'Matches the challenge level you chose.' })
     }
@@ -469,6 +507,24 @@ function tracksFor(search: TrackSearch, preferredSequence: string | undefined): 
     if (interest > 0) {
       const goals = matchedGoals(model, course)
       if (goals.length) reasons.push({ kind: 'goal', text: `Fits your interest in ${goals.slice(0, 2).join(' and ')}.` })
+    }
+    // A stand-in from another department (Dance in place of P.E.) is for a
+    // student who wants it, not the default.
+    if (course.department !== lane.department && interest === 0) score -= 6
+    // Two courses in one core subject in a year (Biology and Chemistry as a
+    // freshman) should come from the student's interest, not from two
+    // requirements each wanting the earliest year.
+    if (core && interest === 0 && !lane.everyTerm) {
+      const year = yearOfTerm(term)
+      const doubled = ctx.placements.some(
+        (p) =>
+          p.status === 'planned' &&
+          p.term >= 0 &&
+          yearOfTerm(p.term) === year &&
+          !lane.courseIds.includes(p.courseId) &&
+          catalog.courses.get(p.courseId)?.department === course.department,
+      )
+      if (doubled) score -= 3
     }
 
     score += workloadScore(model, course, term)
@@ -490,6 +546,13 @@ function tracksFor(search: TrackSearch, preferredSequence: string | undefined): 
     for (const t of occupiedTerms(term, course.durationTerms)) {
       if (loadAt(ctx, overlay, t) + 1 > model.targetLoad) score -= 8
     }
+    // Credits beyond the requirement follow the student's interest in the
+    // course itself, not in everything the requirement covers: interest in
+    // the biomedical courses among "required electives" is no reason for
+    // three years of music production. And a lane that can't say why a
+    // course is there at all leaves the slot to the elective pass.
+    const extraAffinity = lane.everyTerm ? lane.affinity : lane.baseAffinity + 3 * Math.min(interest, 2)
+    score += (course.credits - useful) * (reasons.length > 0 ? extraAffinity : Math.min(extraAffinity, -4))
     // Earlier is slightly better for required work; later-only courses are unaffected.
     score -= term * 0.05
     // Tiny nudge toward courses that keep doors open, for the curious.

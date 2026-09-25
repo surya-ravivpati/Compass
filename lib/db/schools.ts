@@ -62,6 +62,7 @@ export async function loadSchool(db: Database, schoolId: string): Promise<School
     ...(c.maxEnrollments ? { maxEnrollments: c.maxEnrollments } : {}),
     ...(c.satisfiesFromGrade ? { satisfiesFromGrade: c.satisfiesFromGrade } : {}),
     ...(c.byPlacement ? { byPlacement: true } : {}),
+    ...(c.expectsBackground ? { expectsBackground: true } : {}),
     ...(c.notes?.length ? { notes: c.notes } : {}),
     source: c.source,
   }))

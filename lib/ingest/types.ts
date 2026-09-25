@@ -100,6 +100,10 @@ export interface CatalogOverrides {
       maxEnrollments: number
       satisfiesFromGrade: Partial<Record<string, GradeLevel>>
       byPlacement: boolean
+      /** Prior experience or approval the catalog asks for that Compass can't check. */
+      expectsBackground: boolean
+      /** Compass's interest labels for matching goals (engineering, arts): they rank suggestions only. */
+      tags: string[]
       prerequisites: { courseId: string; timing?: 'before' | 'before-or-concurrent' | 'concurrent' }[][]
       exclude: boolean
     }>

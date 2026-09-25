@@ -170,9 +170,21 @@ export function allocateRequirements(catalog: Catalog, placements: Placement[]):
         // A course already counted for this requirement can still satisfy the
         // group (for example, one course named in two groups).
         const counted = entries.find((e) => group.anyOf.includes(e.courseId) && eligible(req, e))
+        // Work finished before high school earns no credit here, but it still
+        // covers the content a group names ("including Algebra 1").
+        const earlier = counted
+          ? undefined
+          : placements.find(
+              (p) =>
+                p.term === BEFORE_HIGH_SCHOOL &&
+                p.status === 'completed' &&
+                group.anyOf.includes(p.courseId) &&
+                !!catalog.courses.get(p.courseId)?.satisfies.includes(req.id),
+            )
+        const by = counted ?? earlier
         results.push({
           group,
-          satisfiedBy: counted ? { courseId: counted.courseId, term: counted.term, status: counted.status } : null,
+          satisfiedBy: by ? { courseId: by.courseId, term: by.term, status: by.status } : null,
         })
       }
     }

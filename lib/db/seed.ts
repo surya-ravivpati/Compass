@@ -64,6 +64,7 @@ export async function seedSchool(db: Database, school: SchoolConfig): Promise<vo
         maxEnrollments: c.maxEnrollments ?? null,
         satisfiesFromGrade: c.satisfiesFromGrade ?? null,
         byPlacement: c.byPlacement ?? false,
+        expectsBackground: c.expectsBackground ?? false,
         notes: c.notes ?? null,
         source: c.source,
         sortOrder: i,

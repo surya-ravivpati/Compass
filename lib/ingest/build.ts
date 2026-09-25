@@ -1,6 +1,6 @@
 import { validateCatalog } from '../engine/catalog.ts'
 import type { Course, Level, PrereqGroup, Requirement, SchoolConfig, SourceRef, Workload } from '../engine/types.ts'
-import { normalizeName, slugify } from './normalize.ts'
+import { courseCodes, normalizeName, slugify } from './normalize.ts'
 import type { CatalogCitation, CatalogOverrides, DraftCatalog, DraftCourse } from './types.ts'
 
 export interface BuildResult {
@@ -32,9 +32,15 @@ export function buildSchool(draft: DraftCatalog, overrides: CatalogOverrides): B
 
   const drafts = draft.courses.filter((d) => !overrides.courses?.[d.id]?.exclude)
   const byName = new Map(drafts.map((d) => [normalizeName(d.name), d]))
-  const byCode = new Map(drafts.filter((d) => d.code).map((d) => [d.code!.toLowerCase(), d]))
+  const byCode = new Map(drafts.flatMap((d) => courseCodes(d.code).map((code) => [code, d] as const)))
+  // "Computer Programming 1 (CSC161/162)": the name, the name without its
+  // codes, or the codes themselves.
   const resolve = (name: string): DraftCourse | null =>
-    byName.get(normalizeName(name)) ?? byCode.get(name.trim().toLowerCase()) ?? byName.get(normalizeName(slugify(name))) ?? null
+    byName.get(normalizeName(name)) ??
+    byName.get(normalizeName(name.replace(/\([^)]*\)/g, ''))) ??
+    [...courseCodes(name), ...courseCodes(name.match(/\(([^)]*)\)/)?.[1])].map((code) => byCode.get(code)).find((d) => d !== undefined) ??
+    byName.get(normalizeName(slugify(name))) ??
+    null
 
   let estimatedWorkload = 0
   const courses: Course[] = []
@@ -77,7 +83,10 @@ export function buildSchool(draft: DraftCatalog, overrides: CatalogOverrides): B
       o.satisfies ??
       overrides.requirements.filter((r) => r.kind === 'category' && department && r.departments?.includes(department)).map((r) => r.id)
 
-    for (const flag of d.flags) warnings.push(`${at}: ${flag}`)
+    for (const flag of d.flags) {
+      if (flag === 'Credits not stated' && credits) continue // answered by the school credit rule or a reviewer
+      warnings.push(`${at}: ${flag}`)
+    }
 
     if (department && credits && durationTerms && grades?.length && seasons?.length) {
       courses.push({
@@ -94,13 +103,14 @@ export function buildSchool(draft: DraftCatalog, overrides: CatalogOverrides): B
         level,
         workload,
         ...(o.workload === undefined ? { workloadEstimated: true } : {}),
-        tags: [department],
+        tags: [...new Set([department, ...(o.tags ?? [])])],
         satisfies,
         ...(o.sequence ? { sequence: o.sequence } : {}),
         ...(o.equivalenceGroup ? { equivalenceGroup: o.equivalenceGroup } : {}),
         ...(o.maxEnrollments ? { maxEnrollments: o.maxEnrollments } : {}),
         ...(o.satisfiesFromGrade ? { satisfiesFromGrade: o.satisfiesFromGrade } : {}),
         ...(o.byPlacement ? { byPlacement: true } : {}),
+        ...(o.expectsBackground ? { expectsBackground: true } : {}),
         ...(notesFor(d).length ? { notes: notesFor(d) } : {}),
         source: d.source,
       })
@@ -156,7 +166,8 @@ export function buildSchool(draft: DraftCatalog, overrides: CatalogOverrides): B
  * the engine can't check it, so it is shown rather than dropped.
  */
 function notesFor(d: DraftCourse): string[] {
-  const wording = d.prerequisiteText && !d.prerequisites ? d.prerequisiteText.trim() : ''
+  const text = d.prerequisiteText && !d.prerequisites ? d.prerequisiteText.trim() : ''
+  const wording = /^(none|n\/a)\.?$/i.test(text) ? '' : text
   const prerequisite = wording ? (/^prerequisite/i.test(wording) ? wording : `Prerequisite: ${wording}`) : ''
   return [...d.notes, ...(prerequisite ? [prerequisite] : [])]
 }

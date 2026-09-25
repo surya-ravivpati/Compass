@@ -84,6 +84,7 @@ export const courses = pgTable(
     maxEnrollments: integer('max_enrollments'),
     satisfiesFromGrade: jsonb('satisfies_from_grade').$type<Partial<Record<string, GradeLevel>>>(),
     byPlacement: boolean('by_placement').notNull().default(false),
+    expectsBackground: boolean('expects_background').notNull().default(false),
     notes: text('notes').array(),
     source: jsonb('source').$type<SourceRef>().notNull(),
     sortOrder: integer('sort_order').notNull().default(0),

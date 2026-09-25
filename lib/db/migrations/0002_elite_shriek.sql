@@ -1,0 +1,1 @@
+ALTER TABLE "courses" ADD COLUMN "expects_background" boolean DEFAULT false NOT NULL;

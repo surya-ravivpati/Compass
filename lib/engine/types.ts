@@ -105,10 +105,17 @@ export interface Course {
    */
   satisfiesFromGrade?: Partial<Record<string, GradeLevel>>
   /**
-   * The school places students in it (a test, an audition, an application).
+   * The school places students in it (a test, an audition, an application),
+   * or it's an alternative section a student opts into (online, blended).
    * The planner never chooses it on its own; a student can still add it.
    */
   byPlacement?: boolean
+  /**
+   * The catalog expects something Compass can't check: prior experience, an
+   * instrument, a teacher's approval. The notes say what; the planner picks
+   * the course only for a student who is interested in it.
+   */
+  expectsBackground?: boolean
   /** Catalog notes the engine does not enforce. */
   notes?: string[]
   source: SourceRef

@@ -30,7 +30,7 @@ describe('catalog storage', () => {
         },
       ],
     })
-    Object.assign(school.courses[1]!, { workloadEstimated: true, satisfiesFromGrade: { math: 12 }, byPlacement: true })
+    Object.assign(school.courses[1]!, { workloadEstimated: true, satisfiesFromGrade: { math: 12 }, byPlacement: true, expectsBackground: true })
     await seedSchool(db, school)
     expect(await loadSchool(db, school.id)).toEqual(school)
   })

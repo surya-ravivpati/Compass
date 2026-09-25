@@ -46,6 +46,7 @@ interface Spec {
   sequence?: { id: string; step: number }
   equivalenceGroup?: string
   maxEnrollments?: number
+  expectsBackground?: boolean
   notes?: string[]
 }
 
@@ -69,6 +70,7 @@ function course(spec: Spec): Course {
     ...(spec.sequence ? { sequence: spec.sequence } : {}),
     ...(spec.equivalenceGroup ? { equivalenceGroup: spec.equivalenceGroup } : {}),
     ...(spec.maxEnrollments ? { maxEnrollments: spec.maxEnrollments } : {}),
+    ...(spec.expectsBackground ? { expectsBackground: true } : {}),
     ...(spec.notes ? { notes: spec.notes } : {}),
     source: SEED,
   }
@@ -902,6 +904,7 @@ const courses: Course[] = [
     grades: ALL,
     tags: ['arts', 'music', 'performing-arts'],
     maxEnrollments: 4,
+    expectsBackground: true,
     notes: ['Students should already play a band instrument.'],
   }),
   arts({
@@ -930,6 +933,7 @@ const courses: Course[] = [
     grades: g(10, 11, 12),
     workload: 3,
     tags: ['arts', 'music'],
+    expectsBackground: true,
     notes: ['Prior music study is recommended.'],
   }),
 
@@ -1170,7 +1174,7 @@ export const DEMO_SCHOOL: SchoolConfig = {
   totalCredits: 24,
   preHighSchoolCredit: false,
   departments: [
-    { id: 'english', name: 'English', order: 0, lane: true },
+    { id: 'english', name: 'English', shortName: 'English', order: 0, lane: true },
     { id: 'math', name: 'Mathematics', shortName: 'math', order: 1, lane: true },
     { id: 'science', name: 'Science', order: 2, lane: true },
     { id: 'social-studies', name: 'Social Studies', order: 3, lane: true },
