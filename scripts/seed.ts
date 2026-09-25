@@ -15,6 +15,9 @@ if (process.env.DATABASE_URL) {
   close = () => pool.end()
 } else {
   db = await openPglite(path.join(process.cwd(), '.data', 'pglite'))
+  // An open embedded database keeps the process alive after seeding.
+  const client = (db as unknown as { $client: { close(): Promise<void> } }).$client
+  close = () => client.close()
 }
 for (const school of allCatalogs()) {
   await seedSchool(db, school)
