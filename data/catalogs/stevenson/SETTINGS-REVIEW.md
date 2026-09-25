@@ -11,6 +11,23 @@ setting below is marked:
 After editing `overrides.json`, run `npm run catalog:build -- stevenson` and then
 `npm run db:seed`.
 
+## Checked against the coursebook's own index
+
+The "Course List by Name" and "Course List by Number" (PDF pages 112–117) are an
+independent list of every course, so the catalog was checked against them:
+
+- **Coverage:** the index names 511 course codes, and the catalog has all of them except
+  the four Early Bird sections (AP Biology, AP Chemistry, AP Physics 1, AP Physics C).
+  Those are the same courses taught before school, and are left out on purpose.
+- **Levels:** the index tags each course with its GPA weighting: CP (college prep),
+  A (accelerated) or H (honors/AP). All 214 courses with a single tag match the
+  catalog's level.
+- **Two-level courses:** some courses are tagged "(CP, A)" or "(CP, H)". The student
+  chooses the level; examples are World Literature, Creative Writing, Wind Ensemble and
+  Business of Fashion. **Interpreted:** Compass plans these at the college-prep level.
+- **No tag:** English 9 sections and Technology Campus programs have no tag in the index,
+  and are college prep (p26, p29).
+
 ## School
 
 | Setting | Value | Source | |
