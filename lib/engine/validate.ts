@@ -335,11 +335,14 @@ function checkRepeats(catalog: Catalog, placements: Placement[], add: Add) {
   const ordered = [...placements].sort((a, b) => a.term - b.term || a.courseId.localeCompare(b.courseId))
   const counts = new Map<string, number>()
   const groupFirst = new Map<string, Placement>()
-  for (const p of ordered) {
+  ordered.forEach((p, i) => {
     const course = catalog.courses.get(p.courseId)!
     const n = (counts.get(p.courseId) ?? 0) + 1
     counts.set(p.courseId, n)
     const max = course.maxEnrollments ?? 1
+    const alongside = ordered
+      .slice(0, i)
+      .find((q) => q.courseId === p.courseId && q.term !== BEFORE_HIGH_SCHOOL && p.term <= endTerm(q.term, course.durationTerms))
     if (n > max && p.status !== 'completed') {
       const earlier = ordered.find((q) => q.courseId === p.courseId && q !== p)!
       add({
@@ -350,6 +353,16 @@ function checkRepeats(catalog: Catalog, placements: Placement[], add: Add) {
           max === 1
             ? `${course.name} is in your plan twice. You ${earlier.status === 'completed' ? 'already completed it' : 'already have it'} ${atPhrase(earlier.term, course.durationTerms)}.`
             : `${course.name} can be taken ${max} times, and your plan has it ${n} times.`,
+        courseId: course.id,
+        term: p.term,
+        fixes: [{ kind: 'remove', courseId: course.id, term: p.term, label: `Remove this ${course.name}` }],
+      })
+    } else if (alongside && p.status !== 'completed') {
+      add({
+        check: 'repeats',
+        code: 'repeat-same-term',
+        severity: 'error',
+        message: `${course.name} is in your plan twice ${atPhrase(p.term, course.durationTerms)}. You can take it again later, but not twice at the same time.`,
         courseId: course.id,
         term: p.term,
         fixes: [{ kind: 'remove', courseId: course.id, term: p.term, label: `Remove this ${course.name}` }],
@@ -373,7 +386,7 @@ function checkRepeats(catalog: Catalog, placements: Placement[], add: Add) {
         groupFirst.set(course.equivalenceGroup, p)
       }
     }
-  }
+  })
 }
 
 function checkLoad(catalog: Catalog, student: StudentState, placements: Placement[], add: Add): TermLoad[] {

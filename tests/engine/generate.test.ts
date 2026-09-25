@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { analyzeWorkload, generatePlan, levelIndex, type GenerateResult } from '../../lib/engine/index.ts'
+import { emptyOverlay, extendOverlay, infeasibility, PlanningContext } from '../../lib/engine/generate/context.ts'
 import { coursesIn, demo, generateFor, planned, prefs, preHighSchool, termOf } from './helpers.ts'
 
 const PROFILES: [string, string, Parameters<typeof generateFor>[1]][] = [
@@ -8,6 +9,7 @@ const PROFILES: [string, string, Parameters<typeof generateFor>[1]][] = [
   ['geometry, medicine, maximum rigor', 'geometry', { rigor: 'maximum', goals: ['medicine', 'maximize-rigor'] }],
   ['honors algebra 2, computer science', 'honors-algebra-2', { rigor: 'challenging', goals: ['computer-science'] }],
   ['algebra 1, humanities, explore', 'algebra-1', { rigor: 'challenging', goals: ['humanities', 'explore', 'college'] }],
+  ['algebra 1, arts', 'algebra-1', { rigor: 'challenging', goals: ['arts'] }],
   ['algebra 1, athletics', 'algebra-1', {
     rigor: 'balanced',
     goals: ['athletics'],
@@ -70,6 +72,13 @@ describe('four-year generation', () => {
       }
     })
 
+    it('never has the same course twice in one semester', () => {
+      for (let t = 0; t < 8; t++) {
+        const ids = coursesIn(demo, result.plan, t).map((c) => c.id)
+        expect(new Set(ids).size, `term ${t}`).toBe(ids.length)
+      }
+    })
+
     it('explains every placement', () => {
       for (const p of result.plan.placements) {
         expect(result.reasons[`${p.courseId}@${p.term}`]?.length, p.courseId).toBeGreaterThan(0)
@@ -80,6 +89,15 @@ describe('four-year generation', () => {
       expect(result.stages.map((s) => s.id)).toEqual(['requirements', 'prerequisites', 'availability', 'preferences', 'validation'])
       expect(result.stages.at(-1)!.detail).toContain('no conflicts')
     })
+  })
+
+  it('brings a repeatable course back in a later year, never twice at once', () => {
+    const band = demo.courses.get('concert-band')!
+    const ctx = new PlanningContext(demo, [planned('concert-band', 2)])
+    expect(infeasibility(ctx, emptyOverlay(), band, 2, 7, new Set())).toBe('taken')
+    expect(infeasibility(ctx, emptyOverlay(), band, 4, 7, new Set())).toBeNull()
+    const overlay = extendOverlay(demo, emptyOverlay(), planned('concert-band', 4))
+    expect(infeasibility(new PlanningContext(demo), overlay, band, 4, 7, new Set())).toBe('taken')
   })
 
   it('is deterministic', () => {

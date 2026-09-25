@@ -106,6 +106,15 @@ describe('plan validation', () => {
     )
   })
 
+  it('lets a repeatable course come back later, but not twice at once', () => {
+    const later: Plan = { placements: [planned('concert-band', 0), planned('concert-band', 2)] }
+    expect(errorsOf(later).filter((f) => f.check === 'repeats')).toEqual([])
+    const together: Plan = { placements: [planned('concert-band', 2), planned('concert-band', 2)] }
+    expect(errorsOf(together).find((f) => f.code === 'repeat-same-term')?.message).toBe(
+      'Concert Band is in your plan twice in sophomore year. You can take it again later, but not twice at the same time.',
+    )
+  })
+
   it('flags a course already completed before high school', () => {
     const plan: Plan = { placements: [...preHighSchool('algebra-1'), planned('algebra-1', 0)] }
     expect(errorsOf(plan).find((f) => f.code === 'repeat-course')?.message).toBe(

@@ -1,7 +1,7 @@
 import type { Catalog } from '../catalog.ts'
 import { evaluatePrerequisites, overlaySpans, spanOf, type Span, type SpanLookup } from '../prereqs.ts'
-import { availabilityProblem, occupiedTerms } from '../terms.ts'
-import { TERM_COUNT, type Course, type Placement, type TermIndex } from '../types.ts'
+import { availabilityProblem, endTerm, occupiedTerms } from '../terms.ts'
+import { BEFORE_HIGH_SCHOOL, TERM_COUNT, type Course, type Placement, type TermIndex } from '../types.ts'
 
 /**
  * The plan under construction: placements, the spans they occupy, how full
@@ -100,11 +100,14 @@ export function infeasibility(
     const sameCourseOnly = (ctx.counts.get(course.id) ?? 0) + (overlay.ids.get(course.id) ?? 0) > 0
     if (!sameCourseOnly) return 'taken'
   }
+  const spans: SpanLookup = overlaySpans(ctx.spans, overlay.spans)
+  // A repeatable course comes back in a later term, never twice at once.
+  const end = endTerm(term, course.durationTerms)
+  if (spans.get(course.id)?.some((s) => s.start !== BEFORE_HIGH_SCHOOL && s.start <= end && term <= s.end)) return 'taken'
   if (availabilityProblem(course, term)) return 'availability'
   for (const t of occupiedTerms(term, course.durationTerms)) {
     if (ctx.occupancy[t]! + (overlay.occupancy.get(t) ?? 0) + 1 > maxLoad) return 'capacity'
   }
-  const spans: SpanLookup = overlaySpans(ctx.spans, overlay.spans)
   if (!evaluatePrerequisites(course, term, spans).satisfied) return 'prerequisites'
   return null
 }
