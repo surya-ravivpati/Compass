@@ -12,3 +12,6 @@ next-env.d.ts
 .DS_Store
 npm-debug.log*
 /catalog-sources/*.pdf
+
+# Local screenshots of the running app
+/screenshots/
