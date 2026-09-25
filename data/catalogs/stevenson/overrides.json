@@ -1,0 +1,3514 @@
+{
+  "school": {
+    "id": "stevenson",
+    "name": "Adlai E. Stevenson High School",
+    "load": {
+      "min": 6,
+      "max": 7
+    },
+    "totalCredits": 45,
+    "preHighSchoolCredit": false,
+    "creditsPerTerm": 1
+  },
+  "departments": [
+    {
+      "id": "english",
+      "name": "English",
+      "shortName": "English",
+      "order": 0,
+      "lane": true,
+      "match": [
+        "COMMUNICATION ARTS"
+      ]
+    },
+    {
+      "id": "math",
+      "name": "Mathematics",
+      "shortName": "math",
+      "order": 1,
+      "lane": true,
+      "match": [
+        "MATHEMATICS"
+      ]
+    },
+    {
+      "id": "science",
+      "name": "Science",
+      "shortName": "science",
+      "order": 2,
+      "lane": true,
+      "match": [
+        "SCIENCE"
+      ]
+    },
+    {
+      "id": "social-studies",
+      "name": "Social Studies",
+      "shortName": "social studies",
+      "order": 3,
+      "lane": true,
+      "match": [
+        "SOCIAL STUDIES"
+      ]
+    },
+    {
+      "id": "world-language",
+      "name": "Language Learning",
+      "shortName": "language",
+      "order": 4,
+      "lane": true,
+      "match": [
+        "LANGUAGE LEARNING",
+        "LANGUAGE LEARNING— HEBREW",
+        "LANGUAGE LEARNING—LATIN AND MANDARIN CHINESE",
+        "LANGUAGE LEARNING—MANDARIN CHINESE",
+        "LANGUAGE LEARNING—MANDARIN CHINESE AND SPANISH",
+        "LANGUAGE LEARNING—SPANISH"
+      ]
+    },
+    {
+      "id": "physical-welfare",
+      "name": "Physical Welfare",
+      "shortName": "P.E.",
+      "order": 5,
+      "lane": true,
+      "match": [
+        "PHYSICAL EDUCATION",
+        "PHYSICAL WELFARE–PHYSICAL EDUCATION AND HEALTH EDUCATION"
+      ]
+    },
+    {
+      "id": "fine-arts",
+      "name": "Fine Arts",
+      "shortName": "fine arts",
+      "order": 6,
+      "lane": false,
+      "match": [
+        "FINE ARTS—VISUAL ARTS",
+        "FINE ARTS—MEDIA ARTS",
+        "ART HISTORY",
+        "FINE ARTS—DANCE",
+        "FINE ARTS—MUSIC",
+        "FINE ARTS—THEATRE"
+      ]
+    },
+    {
+      "id": "applied-arts",
+      "name": "Applied Arts",
+      "shortName": "applied arts",
+      "order": 7,
+      "lane": false,
+      "match": [
+        "BUSINESS EDUCATION",
+        "APPLIED ARTS–BUSINESS EDUCATION",
+        "APPLIED ARTS–DRIVER EDUCATION",
+        "FAMILY AND CONSUMER SCIENCES",
+        "APPLIED ARTS–FAMILY AND CONSUMER SCIENCES",
+        "APPLIED ARTS—TECHNOLOGY CAMPUS"
+      ]
+    },
+    {
+      "id": "cset",
+      "name": "Computer Science, Engineering and Technology",
+      "shortName": "computer science and engineering",
+      "order": 8,
+      "lane": false,
+      "match": [
+        "COMPUTER SCIENCE, ENGINEERING AND TECHNOLOGY (CSET)",
+        "ENGINEERING"
+      ]
+    },
+    {
+      "id": "eld",
+      "name": "English Language Development",
+      "shortName": "ELD",
+      "order": 9,
+      "lane": false,
+      "match": [
+        "ENGLISH LANGUAGE DEVELOPMENT (ELD) DEPARTMENT"
+      ]
+    }
+  ],
+  "requirements": [
+    {
+      "id": "english",
+      "name": "English",
+      "credits": 8,
+      "kind": "category",
+      "departments": [
+        "english"
+      ],
+      "description": "Eight semesters of English, one each semester. Semester electives count as English in senior year and as electives before it.",
+      "source": {
+        "page": 5,
+        "quote": "English 8 semesters/credits"
+      }
+    },
+    {
+      "id": "math",
+      "name": "Mathematics",
+      "credits": 6,
+      "kind": "category",
+      "departments": [
+        "math"
+      ],
+      "description": "Six semesters of math, including Algebra 1 and at least one course with geometry content.",
+      "mustInclude": [
+        {
+          "label": "Algebra 1",
+          "anyOf": [
+            "algebra-1"
+          ]
+        },
+        {
+          "label": "a course with geometry content",
+          "anyOf": [
+            "geometry",
+            "geometry-ab-bc"
+          ]
+        }
+      ],
+      "source": {
+        "page": 64,
+        "quote": "To graduate, students must earn six semesters of mathematics credit, including Algebra 1 and at least one course with geometry content."
+      }
+    },
+    {
+      "id": "biological-science",
+      "name": "Biological Science",
+      "credits": 2,
+      "kind": "category",
+      "description": "Two semesters of a biological science.",
+      "source": {
+        "page": 6,
+        "quote": "Students must complete two semesters of a biological science and two semesters of a physical science in order to graduate."
+      }
+    },
+    {
+      "id": "physical-science",
+      "name": "Physical Science",
+      "credits": 2,
+      "kind": "category",
+      "description": "Two semesters of a physical science.",
+      "source": {
+        "page": 6,
+        "quote": "Students must complete two semesters of a biological science and two semesters of a physical science in order to graduate."
+      }
+    },
+    {
+      "id": "us-history",
+      "name": "U.S. History",
+      "credits": 2,
+      "kind": "category",
+      "description": "Two semesters of U.S. History or AP U.S. History.",
+      "source": {
+        "page": 6,
+        "quote": "two semesters/credits of U.S. History (or AP U.S. History)"
+      }
+    },
+    {
+      "id": "world-history",
+      "name": "World History and Geography",
+      "credits": 2,
+      "kind": "category",
+      "description": "Two semesters of World History and Geography.",
+      "source": {
+        "page": 6,
+        "quote": "two semesters/credits of World History and Geography"
+      }
+    },
+    {
+      "id": "government",
+      "name": "Government",
+      "credits": 1,
+      "kind": "category",
+      "description": "One semester of Government or AP United States Government and Politics.",
+      "source": {
+        "page": 6,
+        "quote": "one semester/credit of Government (or AP United States Government and Politics)"
+      }
+    },
+    {
+      "id": "economics",
+      "name": "Economics or Personal Finance",
+      "credits": 1,
+      "kind": "category",
+      "description": "One semester of Economics, AP Macroeconomics, AP Microeconomics or Personal Finance.",
+      "source": {
+        "page": 6,
+        "quote": "This requirement can be fulfilled by one of the following courses: Economics, AP Macroeconomics, AP Microeconomics or Personal Finance."
+      }
+    },
+    {
+      "id": "health",
+      "name": "Health",
+      "credits": 1,
+      "kind": "category",
+      "description": "One semester of Health Education, including Adult CPR.",
+      "source": {
+        "page": 6,
+        "quote": "One semester/credit of Health Education is required for graduation, including participation in a unit on Adult CPR."
+      }
+    },
+    {
+      "id": "driver-education",
+      "name": "Driver Education",
+      "credits": 1,
+      "kind": "category",
+      "description": "One semester of Driver Education (or a commercial school certificate or an Illinois license issued before 18).",
+      "source": {
+        "page": 5,
+        "quote": "Driver Education 1 semester/credit"
+      }
+    },
+    {
+      "id": "required-electives",
+      "name": "Required Electives",
+      "credits": 2,
+      "kind": "category",
+      "departments": [
+        "applied-arts",
+        "fine-arts",
+        "world-language",
+        "eld",
+        "cset"
+      ],
+      "description": "Two semesters from Applied Arts, Fine Arts, Multilingual Learning, or Computer Science, Engineering and Technology.",
+      "source": {
+        "page": 6,
+        "quote": "At least two elective semester credits must come from any of the following divisions: Applied Arts, Fine Arts, Multilingual Learning and/or Computer Science, Engineering and Technology."
+      }
+    },
+    {
+      "id": "additional",
+      "name": "Additional Credits and P.E.",
+      "credits": 17,
+      "kind": "elective",
+      "description": "Seventeen more semesters of any courses, P.E. included.",
+      "source": {
+        "page": 5,
+        "quote": "Additional Credits and P.E. 17 semesters/credits"
+      }
+    }
+  ],
+  "courses": {
+    "academic-literacy-1": {
+      "exclude": true
+    },
+    "academic-literacy-2": {
+      "exclude": true
+    },
+    "guided-study": {
+      "exclude": true
+    },
+    "guided-study-math": {
+      "exclude": true
+    },
+    "mentor-math": {
+      "exclude": true
+    },
+    "mentor-skills": {
+      "exclude": true
+    },
+    "study-skills": {
+      "exclude": true
+    },
+    "early-bird-option": {
+      "exclude": true
+    },
+    "2d-animation": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "tags": [
+        "arts",
+        "design",
+        "media"
+      ]
+    },
+    "3d-animation": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "prerequisites": [
+        [
+          {
+            "courseId": "2d-animation"
+          }
+        ]
+      ],
+      "tags": [
+        "arts",
+        "design",
+        "media"
+      ]
+    },
+    "accounting-1": {
+      "level": "standard",
+      "seasons": [
+        "fall"
+      ],
+      "tags": [
+        "business",
+        "finance"
+      ]
+    },
+    "accounting-2": {
+      "level": "honors",
+      "seasons": [
+        "spring"
+      ],
+      "tags": [
+        "business",
+        "finance"
+      ]
+    },
+    "acting-1-confidence-and-collaboration": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "tags": [
+        "arts",
+        "performing-arts"
+      ]
+    },
+    "acting-2-character-and-comedy": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "tags": [
+        "arts",
+        "performing-arts"
+      ]
+    },
+    "acting-3": {
+      "level": "standard",
+      "seasons": [
+        "fall"
+      ],
+      "tags": [
+        "arts",
+        "performing-arts"
+      ]
+    },
+    "acting-4": {
+      "level": "standard",
+      "seasons": [
+        "spring"
+      ],
+      "tags": [
+        "arts",
+        "performing-arts"
+      ]
+    },
+    "advanced-accounting": {
+      "level": "honors",
+      "seasons": [
+        "fall"
+      ],
+      "tags": [
+        "business",
+        "finance"
+      ]
+    },
+    "advanced-acting": {
+      "level": "honors",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "maxEnrollments": 4,
+      "tags": [
+        "arts",
+        "performing-arts"
+      ]
+    },
+    "advanced-architectural-design": {
+      "level": "standard",
+      "tags": [
+        "engineering",
+        "design"
+      ]
+    },
+    "advanced-ceramics-metals-and-sculpture": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "prerequisites": [
+        [
+          {
+            "courseId": "art-and-design"
+          }
+        ],
+        [
+          {
+            "courseId": "ceramics"
+          },
+          {
+            "courseId": "metals-and-jewelry"
+          }
+        ],
+        [
+          {
+            "courseId": "ceramics"
+          },
+          {
+            "courseId": "sculpture"
+          }
+        ],
+        [
+          {
+            "courseId": "metals-and-jewelry"
+          },
+          {
+            "courseId": "sculpture"
+          }
+        ]
+      ],
+      "tags": [
+        "arts",
+        "design"
+      ]
+    },
+    "advanced-chorus": {
+      "level": "standard",
+      "maxEnrollments": 3,
+      "byPlacement": true,
+      "tags": [
+        "arts",
+        "music",
+        "performing-arts"
+      ]
+    },
+    "advanced-drawing-painting-and-mixed-media": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "maxEnrollments": 6,
+      "prerequisites": [
+        [
+          {
+            "courseId": "art-and-design"
+          }
+        ],
+        [
+          {
+            "courseId": "drawing"
+          },
+          {
+            "courseId": "painting"
+          }
+        ],
+        [
+          {
+            "courseId": "drawing"
+          },
+          {
+            "courseId": "mixed-media"
+          }
+        ],
+        [
+          {
+            "courseId": "painting"
+          },
+          {
+            "courseId": "mixed-media"
+          }
+        ]
+      ],
+      "tags": [
+        "arts",
+        "design"
+      ]
+    },
+    "advanced-journalistic-writing": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "satisfiesFromGrade": {
+        "english": 12
+      },
+      "tags": [
+        "humanities",
+        "writing",
+        "media"
+      ]
+    },
+    "advanced-mathematical-decision-making": {
+      "level": "standard",
+      "tags": [
+        "math"
+      ]
+    },
+    "advanced-music-production": {
+      "level": "honors",
+      "maxEnrollments": 3,
+      "prerequisites": [
+        [
+          {
+            "courseId": "music-production-2"
+          }
+        ]
+      ],
+      "tags": [
+        "arts",
+        "music"
+      ]
+    },
+    "advanced-photography-and-digital-design": {
+      "level": "honors",
+      "prerequisites": [
+        [
+          {
+            "courseId": "photography-1"
+          },
+          {
+            "courseId": "digital-art-and-design-1"
+          },
+          {
+            "courseId": "2d-animation"
+          },
+          {
+            "courseId": "3d-animation"
+          }
+        ],
+        [
+          {
+            "courseId": "photography-1"
+          },
+          {
+            "courseId": "digital-art-and-design-2"
+          },
+          {
+            "courseId": "2d-animation"
+          },
+          {
+            "courseId": "3d-animation"
+          }
+        ],
+        [
+          {
+            "courseId": "photography-2"
+          },
+          {
+            "courseId": "digital-art-and-design-1"
+          },
+          {
+            "courseId": "2d-animation"
+          },
+          {
+            "courseId": "3d-animation"
+          }
+        ],
+        [
+          {
+            "courseId": "photography-2"
+          },
+          {
+            "courseId": "digital-art-and-design-2"
+          },
+          {
+            "courseId": "2d-animation"
+          },
+          {
+            "courseId": "3d-animation"
+          }
+        ]
+      ],
+      "tags": [
+        "arts",
+        "design",
+        "media"
+      ]
+    },
+    "advanced-spanish-conversation-and-culture": {
+      "level": "standard",
+      "tags": [
+        "language",
+        "humanities"
+      ]
+    },
+    "adventure-education": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "prerequisites": [
+        [
+          {
+            "courseId": "freshman-foundational-fitness-choice-p-e"
+          },
+          {
+            "courseId": "lifeguard-training-and-certification"
+          },
+          {
+            "courseId": "alternative-physical-education"
+          }
+        ]
+      ],
+      "tags": [
+        "athletics",
+        "fitness"
+      ]
+    },
+    "algebra-1": {
+      "level": "standard",
+      "tags": [
+        "math"
+      ]
+    },
+    "algebra-2": {
+      "level": "standard",
+      "equivalenceGroup": "algebra-2",
+      "tags": [
+        "math"
+      ]
+    },
+    "algebra-2-ab-bc": {
+      "level": "standard",
+      "equivalenceGroup": "algebra-2",
+      "tags": [
+        "math"
+      ]
+    },
+    "alternative-physical-education": {
+      "level": "standard",
+      "byPlacement": true,
+      "tags": [
+        "athletics",
+        "fitness"
+      ]
+    },
+    "alternative-physical-education-leadership": {
+      "level": "standard",
+      "byPlacement": true,
+      "tags": [
+        "athletics",
+        "fitness",
+        "leadership"
+      ]
+    },
+    "american-studies-ap-english-language-and-composition-and-ap-u-s-history": {
+      "level": "ap",
+      "equivalenceGroup": "english-11",
+      "byPlacement": true,
+      "tags": [
+        "humanities",
+        "writing"
+      ]
+    },
+    "american-studies-ap-u-s-history-and-ap-english-language-and-composition": {
+      "level": "ap",
+      "satisfies": [
+        "us-history"
+      ],
+      "equivalenceGroup": "us-history",
+      "byPlacement": true,
+      "tags": [
+        "humanities",
+        "history"
+      ]
+    },
+    "ap-african-american-studies": {
+      "level": "ap",
+      "tags": [
+        "humanities",
+        "history"
+      ]
+    },
+    "ap-art-drawing-2d-and-3d-design": {
+      "level": "ap",
+      "maxEnrollments": 2,
+      "tags": [
+        "arts",
+        "design"
+      ]
+    },
+    "ap-art-history": {
+      "level": "ap",
+      "tags": [
+        "arts",
+        "history",
+        "humanities"
+      ]
+    },
+    "ap-biology": {
+      "level": "ap",
+      "satisfies": [
+        "biological-science"
+      ],
+      "tags": [
+        "science",
+        "biology",
+        "medicine",
+        "health-science"
+      ]
+    },
+    "ap-calculus-ab": {
+      "level": "ap",
+      "equivalenceGroup": "calculus",
+      "prerequisites": [
+        [
+          {
+            "courseId": "ap-precalculus-ab"
+          },
+          {
+            "courseId": "ap-precalculus-bc"
+          }
+        ]
+      ],
+      "tags": [
+        "math"
+      ]
+    },
+    "ap-calculus-bc": {
+      "level": "ap",
+      "equivalenceGroup": "calculus",
+      "tags": [
+        "math"
+      ]
+    },
+    "ap-chemistry": {
+      "level": "ap",
+      "satisfies": [
+        "physical-science"
+      ],
+      "tags": [
+        "science",
+        "chemistry"
+      ]
+    },
+    "ap-chinese-language-and-culture": {
+      "level": "ap",
+      "sequence": {
+        "id": "mandarin",
+        "step": 5
+      },
+      "prerequisites": [
+        [
+          {
+            "courseId": "mandarin-chinese-4"
+          },
+          {
+            "courseId": "mandarin-chinese-3"
+          }
+        ]
+      ],
+      "tags": [
+        "language",
+        "humanities"
+      ]
+    },
+    "ap-comparative-government-and-politics": {
+      "level": "ap",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "equivalenceGroup": "ap-comparative-government",
+      "tags": [
+        "humanities",
+        "civics"
+      ]
+    },
+    "ap-comparative-government-and-politics-online": {
+      "level": "ap",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "equivalenceGroup": "ap-comparative-government",
+      "byPlacement": true,
+      "tags": [
+        "humanities",
+        "civics"
+      ]
+    },
+    "ap-computer-science-a": {
+      "level": "ap",
+      "tags": [
+        "computer-science"
+      ]
+    },
+    "ap-computer-science-principles": {
+      "level": "ap",
+      "tags": [
+        "computer-science"
+      ]
+    },
+    "ap-english-language-and-composition": {
+      "level": "ap",
+      "equivalenceGroup": "english-11",
+      "tags": [
+        "humanities",
+        "writing"
+      ]
+    },
+    "ap-environmental-science": {
+      "level": "ap",
+      "satisfies": [
+        "biological-science",
+        "physical-science"
+      ],
+      "tags": [
+        "science",
+        "biology",
+        "environment"
+      ]
+    },
+    "ap-european-history": {
+      "level": "ap",
+      "tags": [
+        "humanities",
+        "history"
+      ]
+    },
+    "ap-french-language": {
+      "level": "ap",
+      "sequence": {
+        "id": "french",
+        "step": 4
+      },
+      "prerequisites": [
+        [
+          {
+            "courseId": "french-3"
+          }
+        ]
+      ],
+      "tags": [
+        "language",
+        "humanities"
+      ]
+    },
+    "ap-german-language-and-culture": {
+      "level": "ap",
+      "sequence": {
+        "id": "german",
+        "step": 4
+      },
+      "prerequisites": [
+        [
+          {
+            "courseId": "german-3"
+          }
+        ]
+      ],
+      "tags": [
+        "language",
+        "humanities"
+      ]
+    },
+    "ap-government-united-states": {
+      "level": "ap",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "satisfies": [
+        "government"
+      ],
+      "equivalenceGroup": "government",
+      "prerequisites": [
+        [
+          {
+            "courseId": "world-history-and-geography"
+          }
+        ],
+        [
+          {
+            "courseId": "u-s-history"
+          },
+          {
+            "courseId": "ap-u-s-history"
+          },
+          {
+            "courseId": "american-studies-ap-u-s-history-and-ap-english-language-and-composition"
+          }
+        ]
+      ],
+      "tags": [
+        "humanities",
+        "civics"
+      ]
+    },
+    "ap-government-united-states-online": {
+      "level": "ap",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "satisfies": [
+        "government"
+      ],
+      "equivalenceGroup": "government",
+      "prerequisites": [
+        [
+          {
+            "courseId": "world-history-and-geography"
+          }
+        ],
+        [
+          {
+            "courseId": "u-s-history"
+          },
+          {
+            "courseId": "ap-u-s-history"
+          },
+          {
+            "courseId": "american-studies-ap-u-s-history-and-ap-english-language-and-composition"
+          }
+        ]
+      ],
+      "byPlacement": true,
+      "tags": [
+        "humanities",
+        "civics"
+      ]
+    },
+    "ap-human-geography": {
+      "level": "ap",
+      "tags": [
+        "humanities",
+        "geography"
+      ]
+    },
+    "ap-latin": {
+      "level": "ap",
+      "sequence": {
+        "id": "latin",
+        "step": 4
+      },
+      "prerequisites": [
+        [
+          {
+            "courseId": "latin-3"
+          }
+        ]
+      ],
+      "tags": [
+        "language",
+        "humanities"
+      ]
+    },
+    "ap-literature-and-composition": {
+      "level": "ap",
+      "tags": [
+        "humanities",
+        "writing",
+        "literature"
+      ]
+    },
+    "ap-macroeconomics": {
+      "level": "ap",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "satisfies": [
+        "economics"
+      ],
+      "tags": [
+        "humanities",
+        "economics"
+      ]
+    },
+    "ap-microeconomics": {
+      "level": "ap",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "satisfies": [
+        "economics"
+      ],
+      "tags": [
+        "humanities",
+        "economics"
+      ]
+    },
+    "ap-music-theory": {
+      "level": "ap",
+      "expectsBackground": true,
+      "tags": [
+        "arts",
+        "music"
+      ]
+    },
+    "ap-photography-and-digital-design": {
+      "level": "ap",
+      "tags": [
+        "arts",
+        "design",
+        "media"
+      ]
+    },
+    "ap-physics-1": {
+      "level": "ap",
+      "satisfies": [
+        "physical-science"
+      ],
+      "tags": [
+        "science",
+        "physics"
+      ]
+    },
+    "ap-physics-2": {
+      "level": "ap",
+      "satisfies": [
+        "physical-science"
+      ],
+      "tags": [
+        "science",
+        "physics"
+      ]
+    },
+    "ap-physics-c": {
+      "level": "ap",
+      "satisfies": [
+        "physical-science"
+      ],
+      "prerequisites": [
+        [
+          {
+            "courseId": "ap-physics-1"
+          },
+          {
+            "courseId": "ap-physics-2"
+          }
+        ],
+        [
+          {
+            "courseId": "ap-calculus-ab",
+            "timing": "before-or-concurrent"
+          },
+          {
+            "courseId": "ap-calculus-bc",
+            "timing": "before-or-concurrent"
+          }
+        ]
+      ],
+      "tags": [
+        "science",
+        "physics"
+      ]
+    },
+    "ap-precalculus-ab": {
+      "level": "ap",
+      "equivalenceGroup": "precalculus",
+      "tags": [
+        "math"
+      ]
+    },
+    "ap-precalculus-bc": {
+      "level": "ap",
+      "equivalenceGroup": "precalculus",
+      "tags": [
+        "math"
+      ]
+    },
+    "ap-psychology": {
+      "level": "ap",
+      "equivalenceGroup": "ap-psychology",
+      "prerequisites": [
+        [
+          {
+            "courseId": "world-history-and-geography"
+          }
+        ],
+        [
+          {
+            "courseId": "u-s-history"
+          },
+          {
+            "courseId": "ap-u-s-history"
+          },
+          {
+            "courseId": "american-studies-ap-u-s-history-and-ap-english-language-and-composition"
+          }
+        ]
+      ],
+      "tags": [
+        "humanities",
+        "psychology"
+      ]
+    },
+    "ap-psychology-blended-option": {
+      "level": "ap",
+      "equivalenceGroup": "ap-psychology",
+      "prerequisites": [
+        [
+          {
+            "courseId": "world-history-and-geography"
+          }
+        ],
+        [
+          {
+            "courseId": "u-s-history"
+          },
+          {
+            "courseId": "ap-u-s-history"
+          },
+          {
+            "courseId": "american-studies-ap-u-s-history-and-ap-english-language-and-composition"
+          }
+        ]
+      ],
+      "byPlacement": true,
+      "tags": [
+        "humanities",
+        "psychology"
+      ]
+    },
+    "ap-spanish-language-and-culture": {
+      "level": "ap",
+      "sequence": {
+        "id": "spanish",
+        "step": 5
+      },
+      "tags": [
+        "language",
+        "humanities"
+      ]
+    },
+    "ap-spanish-literature-and-culture": {
+      "level": "ap",
+      "sequence": {
+        "id": "spanish",
+        "step": 6
+      },
+      "tags": [
+        "language",
+        "humanities"
+      ]
+    },
+    "ap-statistics": {
+      "level": "ap",
+      "prerequisites": [
+        [
+          {
+            "courseId": "ap-precalculus-ab",
+            "timing": "before-or-concurrent"
+          },
+          {
+            "courseId": "ap-precalculus-bc",
+            "timing": "before-or-concurrent"
+          }
+        ]
+      ],
+      "tags": [
+        "math",
+        "data"
+      ]
+    },
+    "ap-u-s-history": {
+      "level": "ap",
+      "satisfies": [
+        "us-history"
+      ],
+      "equivalenceGroup": "us-history",
+      "tags": [
+        "humanities",
+        "history"
+      ]
+    },
+    "applied-health": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "tags": [
+        "health",
+        "wellness",
+        "health-science",
+        "medicine"
+      ]
+    },
+    "architectural-design": {
+      "level": "standard",
+      "tags": [
+        "engineering",
+        "design"
+      ]
+    },
+    "art-and-design": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "tags": [
+        "arts",
+        "design"
+      ]
+    },
+    "automotive-collision-repair-1": {
+      "level": "standard",
+      "byPlacement": true
+    },
+    "automotive-collision-repair-2": {
+      "level": "standard",
+      "byPlacement": true
+    },
+    "automotive-service-1": {
+      "level": "standard",
+      "byPlacement": true
+    },
+    "automotive-service-2": {
+      "level": "standard",
+      "byPlacement": true
+    },
+    "biology": {
+      "level": "standard",
+      "satisfies": [
+        "biological-science"
+      ],
+      "tags": [
+        "science",
+        "biology",
+        "medicine",
+        "health-science"
+      ]
+    },
+    "broadcast-journalism": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "satisfiesFromGrade": {
+        "english": 12
+      },
+      "tags": [
+        "humanities",
+        "writing",
+        "media"
+      ]
+    },
+    "business-applications-and-technology-1": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "tags": [
+        "business"
+      ]
+    },
+    "business-applications-and-technology-2": {
+      "level": "standard",
+      "seasons": [
+        "spring"
+      ],
+      "tags": [
+        "business"
+      ]
+    },
+    "business-law": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "tags": [
+        "business"
+      ]
+    },
+    "business-of-fashion-and-design": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "tags": [
+        "design"
+      ]
+    },
+    "ceramics": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "tags": [
+        "arts",
+        "design"
+      ]
+    },
+    "certified-nurse-assisting": {
+      "level": "standard",
+      "byPlacement": true,
+      "tags": [
+        "medicine",
+        "health-science"
+      ]
+    },
+    "chemistry": {
+      "level": "standard",
+      "satisfies": [
+        "physical-science"
+      ],
+      "tags": [
+        "science",
+        "chemistry"
+      ]
+    },
+    "chinese-literature-media-and-culture": {
+      "level": "honors",
+      "sequence": {
+        "id": "mandarin",
+        "step": 6
+      },
+      "prerequisites": [
+        [
+          {
+            "courseId": "ap-chinese-language-and-culture"
+          }
+        ]
+      ],
+      "tags": [
+        "language",
+        "humanities"
+      ]
+    },
+    "choice-p-e": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "maxEnrollments": 8,
+      "prerequisites": [
+        [
+          {
+            "courseId": "freshman-foundational-fitness-choice-p-e"
+          },
+          {
+            "courseId": "adventure-education"
+          },
+          {
+            "courseId": "lifeguard-training-and-certification"
+          },
+          {
+            "courseId": "alternative-physical-education"
+          }
+        ]
+      ],
+      "tags": [
+        "athletics",
+        "fitness"
+      ]
+    },
+    "civil-engineering-and-architecture-pltw": {
+      "level": "honors",
+      "prerequisites": [
+        [
+          {
+            "courseId": "introduction-to-engineering-design-pltw"
+          },
+          {
+            "courseId": "architectural-design"
+          }
+        ]
+      ],
+      "tags": [
+        "engineering",
+        "design"
+      ]
+    },
+    "clothing-and-design-1": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "tags": [
+        "design"
+      ]
+    },
+    "clothing-and-design-2": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "tags": [
+        "design"
+      ]
+    },
+    "college-linear-algebra": {
+      "level": "post-ap",
+      "seasons": [
+        "spring"
+      ],
+      "tags": [
+        "math"
+      ]
+    },
+    "college-multivariable-calculus": {
+      "level": "post-ap",
+      "seasons": [
+        "fall"
+      ],
+      "tags": [
+        "math"
+      ]
+    },
+    "computer-integrated-manufacturing-pltw": {
+      "level": "honors",
+      "prerequisites": [
+        [
+          {
+            "courseId": "introduction-to-engineering-design-pltw"
+          }
+        ]
+      ],
+      "tags": [
+        "engineering"
+      ]
+    },
+    "computer-programming-1": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "tags": [
+        "computer-science"
+      ]
+    },
+    "computer-programming-2": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "tags": [
+        "computer-science"
+      ]
+    },
+    "computer-science-algorithms": {
+      "level": "honors",
+      "tags": [
+        "computer-science"
+      ]
+    },
+    "computer-support-services": {
+      "level": "standard",
+      "byPlacement": true,
+      "tags": [
+        "computer-science"
+      ]
+    },
+    "concert-dance": {
+      "level": "honors",
+      "maxEnrollments": 3,
+      "prerequisites": [
+        [
+          {
+            "courseId": "dance-4"
+          },
+          {
+            "courseId": "dance-3"
+          }
+        ]
+      ],
+      "tags": [
+        "arts",
+        "performing-arts"
+      ]
+    },
+    "concert-orchestra": {
+      "level": "standard",
+      "maxEnrollments": 3,
+      "expectsBackground": true,
+      "tags": [
+        "arts",
+        "music",
+        "performing-arts"
+      ]
+    },
+    "constitutional-law": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "tags": [
+        "humanities",
+        "civics"
+      ]
+    },
+    "construction-skills-and-management-1": {
+      "level": "standard",
+      "byPlacement": true
+    },
+    "construction-skills-and-management-2": {
+      "level": "standard",
+      "byPlacement": true
+    },
+    "cosmetology-1": {
+      "level": "standard",
+      "byPlacement": true
+    },
+    "cosmetology-2": {
+      "level": "standard",
+      "byPlacement": true
+    },
+    "creative-writing": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "satisfiesFromGrade": {
+        "english": 12
+      },
+      "tags": [
+        "humanities",
+        "writing"
+      ]
+    },
+    "creative-writing-seminar": {
+      "level": "standard",
+      "seasons": [
+        "spring"
+      ],
+      "satisfiesFromGrade": {
+        "english": 12
+      },
+      "tags": [
+        "humanities",
+        "writing"
+      ]
+    },
+    "criminal-justice": {
+      "level": "standard",
+      "byPlacement": true
+    },
+    "culinary-arts-1": {
+      "level": "standard",
+      "byPlacement": true
+    },
+    "culinary-arts-2": {
+      "level": "standard",
+      "byPlacement": true
+    },
+    "current-events": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "maxEnrollments": 8,
+      "byPlacement": true,
+      "tags": [
+        "language"
+      ]
+    },
+    "cybersecurity": {
+      "level": "standard",
+      "byPlacement": true,
+      "tags": [
+        "computer-science"
+      ]
+    },
+    "dance-1": {
+      "level": "standard",
+      "maxEnrollments": 4,
+      "tags": [
+        "arts",
+        "performing-arts"
+      ]
+    },
+    "dance-2": {
+      "level": "standard",
+      "prerequisites": [
+        [
+          {
+            "courseId": "dance-1"
+          }
+        ]
+      ],
+      "tags": [
+        "arts",
+        "performing-arts"
+      ]
+    },
+    "dance-3": {
+      "level": "standard",
+      "maxEnrollments": 4,
+      "prerequisites": [
+        [
+          {
+            "courseId": "dance-2"
+          }
+        ]
+      ],
+      "tags": [
+        "arts",
+        "performing-arts"
+      ]
+    },
+    "dance-4": {
+      "level": "standard",
+      "maxEnrollments": 4,
+      "prerequisites": [
+        [
+          {
+            "courseId": "dance-3"
+          }
+        ]
+      ],
+      "tags": [
+        "arts",
+        "performing-arts"
+      ]
+    },
+    "dance-leadership": {
+      "level": "standard",
+      "maxEnrollments": 3,
+      "byPlacement": true,
+      "prerequisites": [
+        [
+          {
+            "courseId": "dance-3"
+          },
+          {
+            "courseId": "dance-4"
+          }
+        ]
+      ],
+      "tags": [
+        "arts",
+        "performing-arts",
+        "leadership"
+      ]
+    },
+    "data-science": {
+      "level": "standard",
+      "tags": [
+        "math",
+        "data"
+      ]
+    },
+    "digital-art-and-design-1": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "tags": [
+        "arts",
+        "design",
+        "media"
+      ]
+    },
+    "digital-art-and-design-2": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "tags": [
+        "arts",
+        "design",
+        "media"
+      ]
+    },
+    "drawing": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "tags": [
+        "arts",
+        "design"
+      ]
+    },
+    "driver-education": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "satisfies": [
+        "driver-education",
+        "required-electives"
+      ]
+    },
+    "early-education-and-teaching-1": {
+      "level": "standard",
+      "byPlacement": true
+    },
+    "early-education-and-teaching-2": {
+      "level": "standard",
+      "byPlacement": true
+    },
+    "earth-science": {
+      "level": "standard",
+      "satisfies": [
+        "physical-science"
+      ],
+      "equivalenceGroup": "earth-science",
+      "tags": [
+        "science",
+        "environment"
+      ]
+    },
+    "earth-science-dual-credit": {
+      "level": "honors",
+      "satisfies": [
+        "physical-science"
+      ],
+      "equivalenceGroup": "earth-science",
+      "tags": [
+        "science",
+        "environment"
+      ]
+    },
+    "economics": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "satisfies": [
+        "economics"
+      ],
+      "tags": [
+        "humanities",
+        "economics"
+      ]
+    },
+    "electrical-engineering-pltw": {
+      "level": "honors",
+      "prerequisites": [
+        [
+          {
+            "courseId": "introduction-to-engineering-design-pltw"
+          }
+        ]
+      ],
+      "tags": [
+        "engineering"
+      ]
+    },
+    "emergency-medical-services": {
+      "level": "standard",
+      "byPlacement": true,
+      "tags": [
+        "medicine",
+        "health-science"
+      ]
+    },
+    "engineering-design-and-development-pltw": {
+      "level": "honors",
+      "prerequisites": [
+        [
+          {
+            "courseId": "electrical-engineering-pltw"
+          },
+          {
+            "courseId": "principles-of-engineering-pltw"
+          },
+          {
+            "courseId": "computer-integrated-manufacturing-pltw"
+          },
+          {
+            "courseId": "civil-engineering-and-architecture-pltw"
+          }
+        ]
+      ],
+      "tags": [
+        "engineering"
+      ]
+    },
+    "english-9-belonging-and-becoming-stories-culture-and-possibility": {
+      "level": "standard",
+      "equivalenceGroup": "english-9",
+      "tags": [
+        "humanities",
+        "writing"
+      ]
+    },
+    "english-9-mirrors-and-shadows-reflection-perception-and-choices": {
+      "level": "standard",
+      "equivalenceGroup": "english-9",
+      "tags": [
+        "humanities",
+        "writing"
+      ]
+    },
+    "english-9-reimagining-the-future-innovation-identity-and-our-world": {
+      "level": "standard",
+      "equivalenceGroup": "english-9",
+      "tags": [
+        "humanities",
+        "writing"
+      ]
+    },
+    "english-9-threads-of-loyalty-relationships-community-and-social-dynamics": {
+      "level": "standard",
+      "equivalenceGroup": "english-9",
+      "tags": [
+        "humanities",
+        "writing"
+      ]
+    },
+    "english-language-development-eld-1": {
+      "level": "standard",
+      "byPlacement": true,
+      "tags": [
+        "language"
+      ]
+    },
+    "english-language-development-eld-2": {
+      "level": "standard",
+      "byPlacement": true,
+      "tags": [
+        "language"
+      ]
+    },
+    "english-language-development-eld-3-language": {
+      "level": "standard",
+      "byPlacement": true,
+      "tags": [
+        "language"
+      ]
+    },
+    "english-language-development-eld-3-literature": {
+      "level": "standard",
+      "byPlacement": true,
+      "tags": [
+        "language"
+      ]
+    },
+    "english-language-development-eld-4": {
+      "level": "standard",
+      "byPlacement": true,
+      "tags": [
+        "language"
+      ]
+    },
+    "entertainment-production-and-design": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "maxEnrollments": 8,
+      "tags": [
+        "arts"
+      ]
+    },
+    "entrepreneurial-tactics": {
+      "level": "honors",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "prerequisites": [
+        [
+          {
+            "courseId": "introduction-to-business"
+          },
+          {
+            "courseId": "business-law"
+          },
+          {
+            "courseId": "marketing"
+          },
+          {
+            "courseId": "entrepreneurship"
+          }
+        ],
+        [
+          {
+            "courseId": "investment-management"
+          },
+          {
+            "courseId": "accounting-1"
+          },
+          {
+            "courseId": "accounting-2"
+          },
+          {
+            "courseId": "advanced-accounting"
+          }
+        ]
+      ],
+      "tags": [
+        "business"
+      ]
+    },
+    "entrepreneurship": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "tags": [
+        "business"
+      ]
+    },
+    "fire-fighting": {
+      "level": "standard",
+      "byPlacement": true
+    },
+    "food-and-nutrition": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ]
+    },
+    "food-preparation": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ]
+    },
+    "french-1": {
+      "level": "standard",
+      "sequence": {
+        "id": "french",
+        "step": 1
+      },
+      "tags": [
+        "language",
+        "humanities"
+      ]
+    },
+    "french-2": {
+      "level": "honors",
+      "sequence": {
+        "id": "french",
+        "step": 2
+      },
+      "prerequisites": [
+        [
+          {
+            "courseId": "french-1"
+          }
+        ]
+      ],
+      "tags": [
+        "language",
+        "humanities"
+      ]
+    },
+    "french-3": {
+      "level": "honors",
+      "sequence": {
+        "id": "french",
+        "step": 3
+      },
+      "prerequisites": [
+        [
+          {
+            "courseId": "french-2"
+          }
+        ]
+      ],
+      "tags": [
+        "language",
+        "humanities"
+      ]
+    },
+    "freshman-band": {
+      "level": "standard",
+      "expectsBackground": true,
+      "tags": [
+        "arts",
+        "music",
+        "performing-arts"
+      ]
+    },
+    "freshman-foundational-fitness-choice-p-e": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "tags": [
+        "athletics",
+        "fitness"
+      ]
+    },
+    "game-development-1": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "tags": [
+        "computer-science"
+      ]
+    },
+    "game-development-2": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "tags": [
+        "computer-science"
+      ]
+    },
+    "game-programming-and-virtualization": {
+      "level": "standard",
+      "byPlacement": true,
+      "tags": [
+        "computer-science"
+      ]
+    },
+    "geometry": {
+      "level": "standard",
+      "equivalenceGroup": "geometry",
+      "tags": [
+        "math"
+      ]
+    },
+    "geometry-ab-bc": {
+      "level": "standard",
+      "equivalenceGroup": "geometry",
+      "tags": [
+        "math"
+      ]
+    },
+    "german-1": {
+      "level": "standard",
+      "sequence": {
+        "id": "german",
+        "step": 1
+      },
+      "tags": [
+        "language",
+        "humanities"
+      ]
+    },
+    "german-2": {
+      "level": "honors",
+      "sequence": {
+        "id": "german",
+        "step": 2
+      },
+      "prerequisites": [
+        [
+          {
+            "courseId": "german-1"
+          }
+        ]
+      ],
+      "tags": [
+        "language",
+        "humanities"
+      ]
+    },
+    "german-3": {
+      "level": "honors",
+      "sequence": {
+        "id": "german",
+        "step": 3
+      },
+      "prerequisites": [
+        [
+          {
+            "courseId": "german-2"
+          }
+        ]
+      ],
+      "tags": [
+        "language",
+        "humanities"
+      ]
+    },
+    "global-relations": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "tags": [
+        "humanities",
+        "geography"
+      ]
+    },
+    "gourmet-foods": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ]
+    },
+    "government": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "satisfies": [
+        "government"
+      ],
+      "equivalenceGroup": "government",
+      "prerequisites": [
+        [
+          {
+            "courseId": "world-history-and-geography"
+          }
+        ],
+        [
+          {
+            "courseId": "u-s-history"
+          },
+          {
+            "courseId": "ap-u-s-history"
+          },
+          {
+            "courseId": "american-studies-ap-u-s-history-and-ap-english-language-and-composition"
+          }
+        ]
+      ],
+      "tags": [
+        "humanities",
+        "civics"
+      ]
+    },
+    "guitar-1": {
+      "level": "standard",
+      "maxEnrollments": 4,
+      "tags": [
+        "arts",
+        "music"
+      ]
+    },
+    "guitar-2": {
+      "level": "standard",
+      "maxEnrollments": 4,
+      "prerequisites": [
+        [
+          {
+            "courseId": "guitar-1"
+          }
+        ]
+      ],
+      "tags": [
+        "arts",
+        "music",
+        "performing-arts"
+      ]
+    },
+    "health-education": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "satisfies": [
+        "health"
+      ],
+      "tags": [
+        "health",
+        "wellness"
+      ]
+    },
+    "hebrew-1": {
+      "level": "standard",
+      "sequence": {
+        "id": "hebrew",
+        "step": 1
+      },
+      "tags": [
+        "language",
+        "humanities"
+      ]
+    },
+    "hebrew-2": {
+      "level": "honors",
+      "sequence": {
+        "id": "hebrew",
+        "step": 2
+      },
+      "prerequisites": [
+        [
+          {
+            "courseId": "hebrew-1"
+          }
+        ]
+      ],
+      "tags": [
+        "language",
+        "humanities"
+      ]
+    },
+    "hebrew-3": {
+      "level": "honors",
+      "sequence": {
+        "id": "hebrew",
+        "step": 3
+      },
+      "prerequisites": [
+        [
+          {
+            "courseId": "hebrew-2"
+          }
+        ]
+      ],
+      "tags": [
+        "language",
+        "humanities"
+      ]
+    },
+    "hebrew-4": {
+      "level": "honors",
+      "sequence": {
+        "id": "hebrew",
+        "step": 4
+      },
+      "prerequisites": [
+        [
+          {
+            "courseId": "hebrew-3"
+          }
+        ]
+      ],
+      "tags": [
+        "language",
+        "humanities"
+      ]
+    },
+    "horticulture": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "satisfies": [
+        "biological-science"
+      ],
+      "tags": [
+        "science",
+        "biology",
+        "environment"
+      ]
+    },
+    "human-anatomy-and-physiology": {
+      "level": "honors",
+      "satisfies": [
+        "biological-science"
+      ],
+      "tags": [
+        "science",
+        "biology",
+        "medicine",
+        "health-science"
+      ]
+    },
+    "human-growth-and-development": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ]
+    },
+    "interior-design": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "tags": [
+        "design"
+      ]
+    },
+    "intermediate-mandarin-chinese-language-arts": {
+      "level": "honors",
+      "byPlacement": true,
+      "tags": [
+        "language",
+        "humanities"
+      ]
+    },
+    "intermediate-spanish-language-arts": {
+      "level": "honors",
+      "byPlacement": true,
+      "tags": [
+        "language",
+        "humanities"
+      ]
+    },
+    "introduction-to-business": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "tags": [
+        "business"
+      ]
+    },
+    "introduction-to-engineering-design-pltw": {
+      "level": "standard",
+      "tags": [
+        "engineering"
+      ]
+    },
+    "investment-management": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "tags": [
+        "business",
+        "finance"
+      ]
+    },
+    "jazz-fusion": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "tags": [
+        "arts",
+        "performing-arts"
+      ]
+    },
+    "journalistic-writing": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "satisfiesFromGrade": {
+        "english": 12
+      },
+      "tags": [
+        "humanities",
+        "writing",
+        "media"
+      ]
+    },
+    "junior-english": {
+      "level": "standard",
+      "equivalenceGroup": "english-11",
+      "tags": [
+        "humanities",
+        "writing"
+      ]
+    },
+    "latin-1": {
+      "level": "standard",
+      "sequence": {
+        "id": "latin",
+        "step": 1
+      },
+      "tags": [
+        "language",
+        "humanities"
+      ]
+    },
+    "latin-2": {
+      "level": "honors",
+      "sequence": {
+        "id": "latin",
+        "step": 2
+      },
+      "prerequisites": [
+        [
+          {
+            "courseId": "latin-1"
+          }
+        ]
+      ],
+      "tags": [
+        "language",
+        "humanities"
+      ]
+    },
+    "latin-3": {
+      "level": "honors",
+      "sequence": {
+        "id": "latin",
+        "step": 3
+      },
+      "prerequisites": [
+        [
+          {
+            "courseId": "latin-2"
+          }
+        ]
+      ],
+      "tags": [
+        "language",
+        "humanities"
+      ]
+    },
+    "law-enforcement-and-csi": {
+      "level": "standard",
+      "byPlacement": true
+    },
+    "law-in-american-society": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "tags": [
+        "humanities",
+        "civics"
+      ]
+    },
+    "leadership-in-theatre-studies": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "maxEnrollments": 4,
+      "prerequisites": [
+        [
+          {
+            "courseId": "acting-4"
+          },
+          {
+            "courseId": "entertainment-production-and-design"
+          }
+        ]
+      ],
+      "tags": [
+        "arts",
+        "performing-arts",
+        "leadership"
+      ]
+    },
+    "life-by-design": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ]
+    },
+    "lifeguard-training-and-certification": {
+      "level": "standard",
+      "seasons": [
+        "fall"
+      ],
+      "expectsBackground": true,
+      "tags": [
+        "athletics",
+        "fitness"
+      ]
+    },
+    "mandarin-chinese-1": {
+      "level": "standard",
+      "sequence": {
+        "id": "mandarin",
+        "step": 1
+      },
+      "tags": [
+        "language",
+        "humanities"
+      ]
+    },
+    "mandarin-chinese-2": {
+      "level": "honors",
+      "sequence": {
+        "id": "mandarin",
+        "step": 2
+      },
+      "prerequisites": [
+        [
+          {
+            "courseId": "mandarin-chinese-1"
+          }
+        ]
+      ],
+      "tags": [
+        "language",
+        "humanities"
+      ]
+    },
+    "mandarin-chinese-3": {
+      "level": "honors",
+      "sequence": {
+        "id": "mandarin",
+        "step": 3
+      },
+      "prerequisites": [
+        [
+          {
+            "courseId": "mandarin-chinese-2"
+          }
+        ]
+      ],
+      "tags": [
+        "language",
+        "humanities"
+      ]
+    },
+    "mandarin-chinese-4": {
+      "level": "honors",
+      "sequence": {
+        "id": "mandarin",
+        "step": 4
+      },
+      "prerequisites": [
+        [
+          {
+            "courseId": "mandarin-chinese-3"
+          }
+        ]
+      ],
+      "tags": [
+        "language",
+        "humanities"
+      ]
+    },
+    "marketing": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "tags": [
+        "business"
+      ]
+    },
+    "mathematical-modeling-and-design": {
+      "level": "standard",
+      "prerequisites": [
+        [
+          {
+            "courseId": "precalculus"
+          },
+          {
+            "courseId": "ap-precalculus-ab"
+          },
+          {
+            "courseId": "ap-precalculus-bc"
+          }
+        ]
+      ],
+      "tags": [
+        "math"
+      ]
+    },
+    "medical-assisting": {
+      "level": "standard",
+      "byPlacement": true,
+      "tags": [
+        "medicine",
+        "health-science"
+      ]
+    },
+    "metals-and-jewelry": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "tags": [
+        "arts",
+        "design"
+      ]
+    },
+    "mixed-media": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "tags": [
+        "arts",
+        "design"
+      ]
+    },
+    "mobile-app-development": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "tags": [
+        "computer-science"
+      ]
+    },
+    "motion-graphics-and-visual-effects": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "tags": [
+        "design",
+        "media",
+        "arts"
+      ]
+    },
+    "multimedia-design-1": {
+      "level": "standard",
+      "byPlacement": true,
+      "tags": [
+        "design",
+        "media",
+        "arts"
+      ]
+    },
+    "multimedia-design-2": {
+      "level": "standard",
+      "byPlacement": true,
+      "tags": [
+        "design",
+        "media",
+        "arts"
+      ]
+    },
+    "music-production-1": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "tags": [
+        "arts",
+        "music"
+      ]
+    },
+    "music-production-2": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "prerequisites": [
+        [
+          {
+            "courseId": "music-production-1"
+          }
+        ]
+      ],
+      "tags": [
+        "arts",
+        "music"
+      ]
+    },
+    "mythology-and-folklore": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "satisfiesFromGrade": {
+        "english": 12
+      },
+      "tags": [
+        "humanities",
+        "writing",
+        "literature"
+      ]
+    },
+    "painting": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "tags": [
+        "arts",
+        "design"
+      ]
+    },
+    "patriot-guitar-ensemble": {
+      "level": "standard",
+      "byPlacement": true,
+      "tags": [
+        "arts",
+        "music",
+        "performing-arts"
+      ]
+    },
+    "patriot-orchestra": {
+      "level": "standard",
+      "maxEnrollments": 3,
+      "byPlacement": true,
+      "prerequisites": [
+        [
+          {
+            "courseId": "concert-orchestra"
+          },
+          {
+            "courseId": "symphonic-orchestra"
+          }
+        ]
+      ],
+      "tags": [
+        "arts",
+        "music",
+        "performing-arts"
+      ]
+    },
+    "patriot-singers": {
+      "level": "standard",
+      "byPlacement": true,
+      "tags": [
+        "arts",
+        "music",
+        "performing-arts"
+      ]
+    },
+    "personal-finance": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "satisfies": [
+        "economics",
+        "required-electives"
+      ],
+      "equivalenceGroup": "personal-finance",
+      "tags": [
+        "business",
+        "finance"
+      ]
+    },
+    "personal-finance-online": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "satisfies": [
+        "economics",
+        "required-electives"
+      ],
+      "equivalenceGroup": "personal-finance",
+      "byPlacement": true,
+      "tags": [
+        "business",
+        "finance"
+      ]
+    },
+    "philosophy-and-political-theory": {
+      "level": "honors",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "tags": [
+        "humanities",
+        "civics",
+        "philosophy"
+      ]
+    },
+    "photography-1": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "tags": [
+        "arts",
+        "design",
+        "media"
+      ]
+    },
+    "photography-2": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "tags": [
+        "arts",
+        "design",
+        "media"
+      ]
+    },
+    "physical-education-leadership-training": {
+      "level": "standard",
+      "tags": [
+        "athletics",
+        "fitness",
+        "leadership"
+      ]
+    },
+    "physics": {
+      "level": "standard",
+      "satisfies": [
+        "physical-science"
+      ],
+      "tags": [
+        "science",
+        "physics"
+      ]
+    },
+    "piano-1": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "tags": [
+        "arts",
+        "music"
+      ]
+    },
+    "political-thought-and-its-literature": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "equivalenceGroup": "political-thought",
+      "prerequisites": [
+        [
+          {
+            "courseId": "u-s-history"
+          },
+          {
+            "courseId": "ap-u-s-history"
+          },
+          {
+            "courseId": "american-studies-ap-u-s-history-and-ap-english-language-and-composition"
+          }
+        ],
+        [
+          {
+            "courseId": "junior-english"
+          },
+          {
+            "courseId": "ap-english-language-and-composition"
+          },
+          {
+            "courseId": "american-studies-ap-english-language-and-composition-and-ap-u-s-history"
+          }
+        ]
+      ],
+      "tags": [
+        "humanities",
+        "writing",
+        "literature"
+      ]
+    },
+    "political-thought-and-its-literature-soc561": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "equivalenceGroup": "political-thought",
+      "prerequisites": [
+        [
+          {
+            "courseId": "u-s-history"
+          },
+          {
+            "courseId": "ap-u-s-history"
+          },
+          {
+            "courseId": "american-studies-ap-u-s-history-and-ap-english-language-and-composition"
+          }
+        ],
+        [
+          {
+            "courseId": "junior-english"
+          },
+          {
+            "courseId": "ap-english-language-and-composition"
+          },
+          {
+            "courseId": "american-studies-ap-english-language-and-composition-and-ap-u-s-history"
+          }
+        ]
+      ],
+      "tags": [
+        "humanities",
+        "civics"
+      ]
+    },
+    "pool-leadership": {
+      "level": "standard",
+      "durationTerms": 1,
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "prerequisites": [
+        [
+          {
+            "courseId": "lifeguard-training-and-certification"
+          }
+        ]
+      ],
+      "tags": [
+        "athletics",
+        "fitness",
+        "leadership"
+      ]
+    },
+    "precalculus": {
+      "level": "standard",
+      "equivalenceGroup": "precalculus",
+      "tags": [
+        "math"
+      ]
+    },
+    "principles-of-biomedical-science": {
+      "level": "standard",
+      "byPlacement": true,
+      "tags": [
+        "medicine",
+        "health-science"
+      ]
+    },
+    "principles-of-engineering-pltw": {
+      "level": "honors",
+      "prerequisites": [
+        [
+          {
+            "courseId": "introduction-to-engineering-design-pltw"
+          }
+        ]
+      ],
+      "tags": [
+        "engineering"
+      ]
+    },
+    "print-media-1": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "tags": [
+        "design",
+        "media",
+        "arts"
+      ]
+    },
+    "print-media-2": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "tags": [
+        "design",
+        "media",
+        "arts"
+      ]
+    },
+    "psychology": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "tags": [
+        "humanities",
+        "psychology"
+      ]
+    },
+    "public-speaking": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "satisfiesFromGrade": {
+        "english": 12
+      },
+      "tags": [
+        "humanities",
+        "writing",
+        "public-speaking"
+      ]
+    },
+    "publication-design-and-production": {
+      "level": "honors",
+      "maxEnrollments": 3,
+      "satisfiesFromGrade": {
+        "english": 12
+      },
+      "tags": [
+        "humanities",
+        "writing",
+        "media"
+      ]
+    },
+    "science-research": {
+      "level": "standard",
+      "satisfies": [],
+      "tags": [
+        "science",
+        "research"
+      ]
+    },
+    "sculpture": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "tags": [
+        "arts",
+        "design"
+      ]
+    },
+    "senior-leadership": {
+      "level": "standard",
+      "tags": [
+        "athletics",
+        "fitness",
+        "leadership"
+      ]
+    },
+    "sociology": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "equivalenceGroup": "sociology",
+      "tags": [
+        "humanities",
+        "sociology"
+      ]
+    },
+    "sociology-dual-credit-available-with-loyola-university-chicago": {
+      "level": "honors",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "equivalenceGroup": "sociology",
+      "tags": [
+        "humanities",
+        "sociology"
+      ]
+    },
+    "sophomore-english": {
+      "level": "standard",
+      "tags": [
+        "humanities",
+        "writing"
+      ]
+    },
+    "spanish-1": {
+      "level": "standard",
+      "sequence": {
+        "id": "spanish",
+        "step": 1
+      },
+      "tags": [
+        "language",
+        "humanities"
+      ]
+    },
+    "spanish-2": {
+      "level": "standard",
+      "sequence": {
+        "id": "spanish",
+        "step": 2
+      },
+      "prerequisites": [
+        [
+          {
+            "courseId": "spanish-1"
+          }
+        ]
+      ],
+      "tags": [
+        "language",
+        "humanities"
+      ]
+    },
+    "spanish-2-3": {
+      "level": "honors",
+      "equivalenceGroup": "spanish-3",
+      "sequence": {
+        "id": "spanish",
+        "step": 3
+      },
+      "prerequisites": [
+        [
+          {
+            "courseId": "spanish-1"
+          }
+        ]
+      ],
+      "tags": [
+        "language",
+        "humanities"
+      ]
+    },
+    "spanish-3": {
+      "level": "standard",
+      "equivalenceGroup": "spanish-3",
+      "sequence": {
+        "id": "spanish",
+        "step": 3
+      },
+      "tags": [
+        "language",
+        "humanities"
+      ]
+    },
+    "spanish-3-4": {
+      "level": "honors",
+      "equivalenceGroup": "spanish-4",
+      "sequence": {
+        "id": "spanish",
+        "step": 4
+      },
+      "prerequisites": [
+        [
+          {
+            "courseId": "spanish-2-3"
+          }
+        ]
+      ],
+      "tags": [
+        "language",
+        "humanities"
+      ]
+    },
+    "spanish-4": {
+      "level": "standard",
+      "equivalenceGroup": "spanish-4",
+      "sequence": {
+        "id": "spanish",
+        "step": 4
+      },
+      "tags": [
+        "language",
+        "humanities"
+      ]
+    },
+    "stevenson-orchestra": {
+      "level": "standard",
+      "maxEnrollments": 2,
+      "expectsBackground": true,
+      "tags": [
+        "arts",
+        "music",
+        "performing-arts"
+      ]
+    },
+    "stevenson-singers": {
+      "level": "standard",
+      "maxEnrollments": 4,
+      "tags": [
+        "arts",
+        "music",
+        "performing-arts"
+      ]
+    },
+    "symphonic-band": {
+      "level": "standard",
+      "maxEnrollments": 3,
+      "byPlacement": true,
+      "tags": [
+        "arts",
+        "music",
+        "performing-arts"
+      ]
+    },
+    "symphonic-orchestra": {
+      "level": "standard",
+      "maxEnrollments": 4,
+      "byPlacement": true,
+      "tags": [
+        "arts",
+        "music",
+        "performing-arts"
+      ]
+    },
+    "teaching-young-children-1": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ]
+    },
+    "teaching-young-children-2": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ]
+    },
+    "technical-skills": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "maxEnrollments": 6,
+      "prerequisites": [
+        [
+          {
+            "courseId": "dance-2"
+          },
+          {
+            "courseId": "dance-3"
+          },
+          {
+            "courseId": "dance-4"
+          },
+          {
+            "courseId": "concert-dance"
+          }
+        ]
+      ],
+      "tags": [
+        "arts",
+        "performing-arts"
+      ]
+    },
+    "theatre-leadership-directing-and-management": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "prerequisites": [
+        [
+          {
+            "courseId": "acting-4"
+          },
+          {
+            "courseId": "entertainment-production-and-design"
+          }
+        ]
+      ],
+      "tags": [
+        "arts",
+        "performing-arts",
+        "leadership"
+      ]
+    },
+    "topics-in-composition-film-genres": {
+      "level": "standard",
+      "seasons": [
+        "spring"
+      ],
+      "satisfiesFromGrade": {
+        "english": 12
+      },
+      "tags": [
+        "humanities",
+        "writing",
+        "media"
+      ]
+    },
+    "topics-in-composition-media-analysis": {
+      "level": "standard",
+      "seasons": [
+        "fall"
+      ],
+      "satisfiesFromGrade": {
+        "english": 12
+      },
+      "tags": [
+        "humanities",
+        "writing",
+        "media"
+      ]
+    },
+    "u-s-history": {
+      "level": "standard",
+      "satisfies": [
+        "us-history"
+      ],
+      "equivalenceGroup": "us-history",
+      "tags": [
+        "humanities",
+        "history"
+      ]
+    },
+    "video-editing-and-production": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "tags": [
+        "design",
+        "media",
+        "arts"
+      ]
+    },
+    "virtual-reality": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "tags": [
+        "computer-science"
+      ]
+    },
+    "web-development-1": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "tags": [
+        "computer-science"
+      ]
+    },
+    "web-development-2": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "tags": [
+        "computer-science"
+      ]
+    },
+    "welding-and-fabrication-1": {
+      "level": "standard",
+      "byPlacement": true
+    },
+    "welding-and-fabrication-2": {
+      "level": "standard",
+      "byPlacement": true
+    },
+    "wind-ensemble": {
+      "level": "standard",
+      "byPlacement": true,
+      "tags": [
+        "arts",
+        "music",
+        "performing-arts"
+      ]
+    },
+    "wind-symphony": {
+      "level": "standard",
+      "maxEnrollments": 3,
+      "byPlacement": true,
+      "tags": [
+        "arts",
+        "music",
+        "performing-arts"
+      ]
+    },
+    "world-history-and-geography": {
+      "level": "standard",
+      "satisfies": [
+        "world-history"
+      ],
+      "tags": [
+        "humanities",
+        "history",
+        "geography"
+      ]
+    },
+    "world-literature": {
+      "level": "standard",
+      "tags": [
+        "humanities",
+        "writing",
+        "literature"
+      ]
+    },
+    "world-religions": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "tags": [
+        "humanities",
+        "philosophy"
+      ]
+    },
+    "writing-for-college": {
+      "level": "standard",
+      "seasons": [
+        "fall",
+        "spring"
+      ],
+      "tags": [
+        "humanities",
+        "writing"
+      ]
+    }
+  },
+  "policies": [
+    {
+      "kind": "every-term",
+      "id": "pe-every-semester",
+      "department": "physical-welfare",
+      "enforcement": "target",
+      "label": "Stevenson requires P.E. every semester unless Health, Driver Education, Dance or a waiver takes its place",
+      "alsoCounts": [
+        "driver-education",
+        "concert-dance",
+        "dance-1",
+        "dance-2",
+        "dance-3",
+        "dance-4",
+        "dance-leadership",
+        "jazz-fusion",
+        "technical-skills"
+      ],
+      "source": {
+        "page": 6,
+        "quote": "Students must participate in Physical Education during each semester they are enrolled in school unless:"
+      }
+    },
+    {
+      "kind": "every-term",
+      "id": "english-every-semester",
+      "department": "english",
+      "enforcement": "target",
+      "label": "Stevenson asks for an English credit every semester",
+      "source": {
+        "page": 27,
+        "quote": "Students should plan to take at least one English credit per semester unless they plan to graduate early."
+      }
+    }
+  ],
+  "mathPlacement": [
+    {
+      "id": "math-8",
+      "label": "Math 8 (Common Core Math 8)",
+      "completes": [],
+      "description": "You’ll start high school with Algebra 1."
+    },
+    {
+      "id": "algebra-1",
+      "label": "Algebra 1",
+      "completes": [
+        "algebra-1"
+      ],
+      "description": "You’ll start with Geometry or Geometry AB/BC."
+    }
+  ]
+}
