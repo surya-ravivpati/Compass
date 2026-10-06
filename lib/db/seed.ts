@@ -29,6 +29,7 @@ export async function seedSchool(db: Database, school: SchoolConfig): Promise<vo
       departments: school.departments,
       policies: school.policies,
       mathPlacement: school.mathPlacement,
+      ...(school.programs?.length ? { programs: school.programs } : {}),
     }
     await tx
       .insert(schools)

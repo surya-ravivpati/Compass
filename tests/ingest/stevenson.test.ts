@@ -19,6 +19,7 @@ const PROFILES: [string, Placement[], Partial<Preferences>][] = [
   ['Geometry done before high school', geometry, { rigor: 'balanced', goals: [] }],
   // U.S. History fits only junior year; electives mustn't crowd it out.
   ['Math 8, engineering, challenging', [], { rigor: 'challenging', goals: ['engineering'] }],
+  ['Math 8, preparing for college', [], { rigor: 'challenging', goals: ['college'] }],
 ]
 
 describe('the Stevenson catalog', () => {
@@ -31,6 +32,16 @@ describe('the Stevenson catalog', () => {
     for (const item of [...built.school!.requirements, ...built.school!.policies]) {
       expect(item.source, item.id).toMatchObject({ kind: 'catalog', document: 'coursed.pdf', page: expect.any(Number), quote: expect.any(String) })
     }
+  })
+
+  it('plans what Illinois public universities expect for a student preparing for college', () => {
+    const r = generatePlan({ catalog, student: { startTerm: 0 }, history: [], preferences: { ...DEFAULT_PREFERENCES, rigor: 'challenging', goals: ['college'] } })
+    const universities = r.validation.programs.find((p) => p.program.id === 'illinois-public-universities')!
+    expect(universities.program.source).toMatchObject({ kind: 'catalog', page: 7 })
+    expect(universities.covered).toBe(true)
+    const ids = new Set(r.plan.placements.map((p) => p.courseId))
+    expect(['chemistry', 'ap-chemistry'].some((id) => ids.has(id))).toBe(true)
+    expect(['physics', 'ap-physics-1', 'ap-physics-2', 'ap-physics-c'].some((id) => ids.has(id))).toBe(true)
   })
 
   describe.each(PROFILES)('%s', (_label, history, prefs) => {

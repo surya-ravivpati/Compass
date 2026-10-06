@@ -1,4 +1,4 @@
-import type { Enforcement, GradeLevel, Level, MathPlacementOption, MustInclude, Policy, Season, SourceRef, Workload } from '../engine/types.ts'
+import type { Enforcement, GradeLevel, Level, MathPlacementOption, MustInclude, Policy, Program, Season, SourceRef, Workload } from '../engine/types.ts'
 
 /*
  * The catalog pipeline:
@@ -112,4 +112,6 @@ export interface CatalogOverrides {
   >
   policies?: (PolicyWithout<'source' | 'enforcement'> & { enforcement?: Enforcement; source?: CatalogCitation })[]
   mathPlacement?: MathPlacementOption[]
+  /** What the school says universities expect, cited like requirements. */
+  programs?: (Omit<Program, 'source'> & { source?: CatalogCitation })[]
 }

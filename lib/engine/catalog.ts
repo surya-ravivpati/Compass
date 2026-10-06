@@ -1,4 +1,4 @@
-import type { Course, Department, Requirement, SchoolConfig } from './types.ts'
+import { ALL_GOALS, type Course, type Department, type Requirement, type SchoolConfig } from './types.ts'
 
 /**
  * A school configuration indexed for fast lookup. Built once per catalog; it
@@ -164,6 +164,26 @@ export function validateCatalog(school: SchoolConfig): CatalogIssue[] {
   const categorySum = school.requirements.reduce((sum, r) => sum + r.credits, 0)
   if (categorySum > school.totalCredits) {
     warn('totalCredits', `Requirements add up to ${categorySum} credits, more than the ${school.totalCredits} total.`)
+  }
+
+  const goals = new Set<string>(ALL_GOALS)
+  const programIds = new Set<string>()
+  for (const program of school.programs ?? []) {
+    const at = `programs.${program.id}`
+    if (programIds.has(program.id)) error(at, `Duplicate program id "${program.id}".`)
+    programIds.add(program.id)
+    if (!goals.has(program.goal)) error(at, `Unknown goal "${program.goal}".`)
+    const parts = new Set<string>()
+    for (const r of program.requirements) {
+      const rat = `${at}.${r.id}`
+      if (parts.has(r.id)) error(rat, `Duplicate requirement id "${r.id}".`)
+      parts.add(r.id)
+      if (!(r.credits > 0)) error(rat, 'Credits must be greater than zero.')
+      if (!r.counts.requirements?.length && !r.counts.departments?.length) error(rat, 'Nothing counts toward it: name requirements or departments.')
+      for (const id of r.counts.requirements ?? []) if (!requirementIds.has(id)) error(rat, `Unknown requirement "${id}".`)
+      for (const id of r.counts.departments ?? []) if (!departmentIds.has(id)) error(rat, `Unknown department "${id}".`)
+      for (const group of r.mustInclude ?? []) for (const id of group.anyOf) if (!courseIds.has(id)) error(rat, `Unknown course "${id}".`)
+    }
   }
 
   for (const policy of school.policies) {

@@ -90,6 +90,7 @@ export async function loadSchool(db: Database, schoolId: string): Promise<School
     policies: row.settings.policies,
     courses: courseList,
     mathPlacement: row.settings.mathPlacement,
+    ...(row.settings.programs?.length ? { programs: row.settings.programs } : {}),
     source: row.source,
   }
   cache.set(schoolId, { version: row.catalogVersion, school })

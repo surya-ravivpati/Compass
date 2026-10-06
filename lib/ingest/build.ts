@@ -152,6 +152,7 @@ export function buildSchool(draft: DraftCatalog, overrides: CatalogOverrides): B
     policies: (overrides.policies ?? []).map((p) => ({ ...p, enforcement: p.enforcement ?? 'target', source: cite(p.source) }) as SchoolConfig['policies'][number]),
     courses,
     mathPlacement: overrides.mathPlacement ?? [],
+    ...(overrides.programs?.length ? { programs: overrides.programs.map((p) => ({ ...p, source: cite(p.source) })) } : {}),
     source: { kind: 'catalog', document: draft.document },
   }
   for (const issue of validateCatalog(school)) {

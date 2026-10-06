@@ -66,6 +66,24 @@ in Health), FAFSA or opt-out, and the school-day ACT (p119).
 | An English credit every semester | target | p27 ("should plan to") | Stated as advice, so it is a target. |
 | Communication Arts electives count as English only in senior year | — | p27 | **Interpreted** from "Semester electives taken before senior year are considered elective credits". Applied to the journalism, creative writing, mythology, public speaking and composition electives, and to Publication Design. |
 
+## Beyond graduation: what Illinois public universities expect
+
+From p7 ("The following high school program is either required or strongly encouraged for admission to
+all public universities in Illinois"). **Stated.** Never a graduation rule: Compass plans toward it when a
+student chooses "Prepare for college", and shows every student how close their plan is.
+
+| Part | Credits | What counts | Named courses |
+|---|---|---|---|
+| English | 8 | English requirement courses | — |
+| Mathematics | 6 | Math requirement courses | Advanced algebra (Algebra 2 or Algebra 2 AB/BC) |
+| Laboratory science | 6 | Any science course | Biology, chemistry and physics (one course each) |
+| Social studies | 6 | U.S. History, World History, Government, Economics | — |
+| Language, applied arts or fine arts | 4 | Language Learning, ELD, Applied Arts, Fine Arts | — |
+
+**Interpreted:** "laboratory sciences" is read as any Science-division course; "a foundation in biology,
+chemistry and physics" as one course of each; "advanced algebra" as Algebra 2. Trigonometry is covered by
+Precalculus and isn't named separately.
+
 ## Course corrections
 
 - **Names.** The coursebook prints most course names in capitals; Compass shows them in title case ("AP U.S. History", "Introduction to Engineering Design–PLTW") and keeps abbreviations in capitals. Names printed in mixed case are kept exactly. Set `"name"` on a course in `overrides.json` to change how one reads.

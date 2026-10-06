@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import type { Route } from 'next'
-import { placementPhrase, type SourceRef } from '@/lib/engine'
+import { placementPhrase, type ProgramProgress, type SourceRef } from '@/lib/engine'
 import { planInsights } from '@/lib/insights'
 import { loadWorkspace } from '@/lib/workspace'
 import { fmt, REQUIREMENT_STATUS } from '@/components/requirements/requirement-list'
@@ -142,6 +142,16 @@ export default async function RequirementsPage() {
         })}
       </div>
 
+      {validation.programs.map((p) => (
+        <ProgramSection
+          key={p.program.id}
+          progress={p}
+          aiming={student.preferences.goals.includes(p.program.goal)}
+          courseName={(id) => catalog.courses.get(id)?.name ?? id}
+          where={where}
+        />
+      ))}
+
       {progress.extra.length ? (
         <section aria-labelledby="extra-title" className="surface mt-6 p-5">
           <h2 id="extra-title" className="eyebrow">
@@ -190,5 +200,97 @@ function RequirementSource({ source }: { source: SourceRef }) {
       Source: {where}
       {source.kind === 'seed' ? ' — fictional development data, not a real school’s requirements.' : ''}
     </p>
+  )
+}
+
+const capitalized = (text: string) => text.charAt(0).toUpperCase() + text.slice(1)
+
+/**
+ * What a program the school publishes expects (Illinois public universities,
+ * say), against the plan. It is never a graduation rule: amber only for a
+ * student who asked Compass to aim for it.
+ */
+function ProgramSection({
+  progress,
+  aiming,
+  courseName,
+  where,
+}: {
+  progress: ProgramProgress
+  aiming: boolean
+  courseName: (id: string) => string
+  where: (courseId: string, term: number) => string
+}) {
+  const { program, requirements, covered } = progress
+  return (
+    <section aria-labelledby={`program-${program.id}`} className="surface mt-6 p-5 md:p-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="max-w-[680px]">
+          <p className="eyebrow">Beyond graduation</p>
+          <h2 id={`program-${program.id}`} className="mt-1.5 text-[18px] font-semibold">
+            What {program.name} expect
+          </h2>
+          <p className="mt-1 text-[13px] text-mist">{program.description}</p>
+        </div>
+        <span className="flex shrink-0 items-center gap-1.5 text-[13px]">
+          {covered ? <StatusIcon status="valid" size={14} /> : aiming ? <StatusIcon status="attention" size={14} /> : null}
+          <span className={covered ? 'text-ok' : aiming ? 'text-warn' : 'text-mist'}>{covered ? 'Your plan covers it' : 'Not covered yet'}</span>
+        </span>
+      </div>
+      <p className="mt-3 text-xs text-fog">
+        {aiming ? (
+          'Compass plans toward this because you chose “Prepare for college.” It is not a graduation requirement.'
+        ) : (
+          <>
+            Not a graduation requirement. Choose “Prepare for college” in{' '}
+            <Link href="/settings" className="link">
+              Settings
+            </Link>{' '}
+            and Compass will plan toward it.
+          </>
+        )}
+      </p>
+      <ul className="mt-5 grid gap-x-8 gap-y-5 md:grid-cols-2">
+        {requirements.map((r) => {
+          const covering = Math.min(r.completed + r.inProgress + r.planned, r.required)
+          return (
+            <li key={r.requirement.id}>
+              <div className="flex items-baseline justify-between gap-3 text-sm">
+                <span>{capitalized(r.requirement.name)}</span>
+                <span className="tabular text-[13px] text-mist">
+                  {fmt(covering)} / {fmt(r.required)}
+                </span>
+              </div>
+              <p className="mt-0.5 text-xs text-fog">{r.requirement.description}</p>
+              <div className="mt-2">
+                <ProgressSegments size="sm" label={capitalized(r.requirement.name)} required={r.required} completed={r.completed} inProgress={r.inProgress} planned={r.planned} />
+              </div>
+              {r.mustInclude.length ? (
+                <ul className="mt-2 space-y-1 text-[12.5px]">
+                  {r.mustInclude.map((m) => (
+                    <li key={m.group.label} className="flex items-center justify-between gap-3">
+                      <span className="flex items-center gap-2">
+                        {m.satisfiedBy ? (
+                          <IconCheck size={13} className="text-ok" />
+                        ) : aiming ? (
+                          <StatusIcon status="attention" size={13} />
+                        ) : (
+                          <span className="inline-block h-[13px] w-[13px] rounded-full border border-line-strong" aria-hidden />
+                        )}
+                        {capitalized(m.group.label)}
+                      </span>
+                      <span className="text-right text-fog">
+                        {m.satisfiedBy ? `${courseName(m.satisfiedBy.courseId)}, ${where(m.satisfiedBy.courseId, m.satisfiedBy.term)}` : 'Not in your plan'}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </li>
+          )
+        })}
+      </ul>
+      <RequirementSource source={program.source} />
+    </section>
   )
 }

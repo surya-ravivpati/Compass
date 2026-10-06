@@ -1,6 +1,7 @@
 import { courseName, type Catalog } from './catalog.ts'
 import { earliestStarts, limitingChain } from './graph.ts'
 import { evaluatePrerequisites, indexSpans, joinOr, type GroupResult, type SpanIndex } from './prereqs.ts'
+import { countsTowardProgram, programProgress, type ProgramProgress } from './programs.ts'
 import { allocateRequirements, type ProgressReport } from './requirements.ts'
 import {
   atPhrase,
@@ -81,6 +82,8 @@ export interface ValidationReport {
   findings: Finding[]
   progress: ProgressReport
   load: TermLoad[]
+  /** The school's recommended programs (what universities expect) and how the plan measures up. */
+  programs: ProgramProgress[]
 }
 
 export const CHECK_LABELS: Record<CheckId, string> = {
@@ -103,7 +106,7 @@ export function validatePlan(
   catalog: Catalog,
   student: StudentState,
   plan: Plan,
-  preferences?: Pick<Preferences, 'targetCourses'>,
+  preferences?: Pick<Preferences, 'targetCourses'> & Partial<Pick<Preferences, 'goals'>>,
 ): ValidationReport {
   const findings: Finding[] = []
   const add = (f: Omit<Finding, 'id'>) => {
@@ -134,6 +137,9 @@ export function validatePlan(
   const progress = allocateRequirements(catalog, known)
   checkRequirements(catalog, student, known, spans, progress, load, add)
   checkReachability(catalog, student, known, progress, preferences?.targetCourses ?? [], add)
+  const programs = (catalog.school.programs ?? []).map((p) => programProgress(catalog, known, p))
+  const goals = preferences?.goals ?? []
+  checkPrograms(catalog, student, known, spans, load, programs.filter((p) => goals.includes(p.program.goal)), add)
 
   const checks = CHECK_ORDER.map((id): CheckResult => {
     const own = findings.filter((f) => f.check === id)
@@ -146,6 +152,7 @@ export function validatePlan(
     findings,
     progress,
     load,
+    programs,
   }
 }
 
@@ -580,6 +587,52 @@ function checkRequirements(
       message: `Your plan earns ${formatCredits(total.completed + total.inProgress + total.planned)} in total. Graduation needs ${formatCredits(total.required)}.`,
       source: catalog.school.source,
     })
+  }
+}
+
+/**
+ * A program the student's goals ask for (what universities expect) is a
+ * target, never a rule: what it misses needs a look, with a way to add it.
+ */
+function checkPrograms(
+  catalog: Catalog,
+  student: StudentState,
+  placements: Placement[],
+  spans: SpanIndex,
+  load: TermLoad[],
+  programs: ProgramProgress[],
+  add: Add,
+) {
+  for (const { program, requirements } of programs) {
+    for (const r of requirements) {
+      if (r.status !== 'missing') continue
+      const requirementId = `${program.id}:${r.requirement.id}`
+      for (const m of r.mustInclude) {
+        if (m.satisfiedBy) continue
+        add({
+          check: 'policies',
+          code: 'program-course-missing',
+          severity: 'warning',
+          message: `${program.name} expect ${m.group.label}, and your plan doesn't include one.`,
+          requirementId,
+          relatedCourseIds: m.group.anyOf,
+          source: program.source,
+          fixes: suggestAdds(catalog, student, placements, spans, load, m.group.anyOf),
+        })
+      }
+      if (r.remaining > 0) {
+        const eligible = [...catalog.courses.values()].filter((c) => countsTowardProgram(c, r.requirement)).map((c) => c.id)
+        add({
+          check: 'policies',
+          code: 'program-credits-short',
+          severity: 'warning',
+          message: `${program.name} expect ${formatCredits(r.required)} of ${r.requirement.name}; your plan has ${formatCredits(r.completed + r.inProgress + r.planned)}.`,
+          requirementId,
+          source: program.source,
+          fixes: suggestAdds(catalog, student, placements, spans, load, eligible),
+        })
+      }
+    }
   }
 }
 

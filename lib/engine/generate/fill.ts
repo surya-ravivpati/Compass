@@ -5,7 +5,7 @@ import { allocateRequirements, countsTowardAt } from '../requirements.ts'
 import { occupiedTerms, placementPhrase, termLabel, yearOfTerm } from '../terms.ts'
 import { TERM_COUNT, type Course, type TermIndex } from '../types.ts'
 import { advancedAt, emptyOverlay, infeasibility, type PlanningContext } from './context.ts'
-import { ANCHOR_KEPT, ANCHOR_SAME_TERM, reasonKey, sequenceContinuity, type PlacementReason } from './lanes.ts'
+import { ANCHOR_KEPT, ANCHOR_SAME_TERM, programGroupFor, reasonKey, sequenceContinuity, type PlacementReason } from './lanes.ts'
 import { interestScore, isAdvanced, matchedGoals, rigorScore, workloadScore, type PreferenceModel } from './preferences.ts'
 
 export interface FillArgs {
@@ -231,6 +231,7 @@ export function fillElectives(args: FillArgs): FillResult {
       const opens = [...descendants(catalog, course.id)].filter((id) => interestScore(model, catalog.courses.get(id)!) > 0)
       if (opens.length > 0) s += 1
     }
+    if (programGroupFor(catalog, model, course, (id) => ctx.has(id))) s += 6
     if (model.targets.has(course.id)) s += 60
     else if ([...model.targets].some((t) => ancestors(catalog, t).has(course.id))) s += 10
     if (model.avoid.has(course.id)) s -= 60
@@ -241,12 +242,15 @@ export function fillElectives(args: FillArgs): FillResult {
   }
 
   function place(course: Course, term: TermIndex) {
+    // Asked before placing: once it's in, the plan has what the program names.
+    const named = programGroupFor(catalog, model, course, (id) => ctx.has(id))
     ctx.add({ courseId: course.id, term, status: 'planned' })
-    args.reasons.set(reasonKey(course.id, term), electiveReasons(course, term))
+    args.reasons.set(reasonKey(course.id, term), electiveReasons(course, term, named))
   }
 
-  function electiveReasons(course: Course, term: TermIndex): PlacementReason[] {
+  function electiveReasons(course: Course, term: TermIndex, named: { program: string; label: string } | null): PlacementReason[] {
     const reasons: PlacementReason[] = []
+    if (named) reasons.push({ kind: 'goal', text: `${named.program} expect ${named.label}.` })
     const goals = matchedGoals(model, course)
     if (goals.length) reasons.push({ kind: 'goal', text: `An elective that fits your interest in ${goals.slice(0, 2).join(' and ')}.` })
     const result = evaluatePrerequisites(course, term, ctx.spans)

@@ -203,6 +203,33 @@ export interface MathPlacementOption {
   description?: string
 }
 
+/**
+ * Coursework a school recommends beyond graduation, such as what
+ * universities expect. It never makes a plan valid or invalid: the planner
+ * aims for it when a student's goal asks, and every plan shows how close it is.
+ */
+export interface Program {
+  id: string
+  /** Who expects it, as a sentence subject: "Illinois public universities". */
+  name: string
+  description: string
+  /** The goal that asks the planner to aim for it. */
+  goal: GoalId
+  requirements: ProgramRequirement[]
+  source: SourceRef
+}
+
+export interface ProgramRequirement {
+  id: string
+  name: string
+  description: string
+  credits: number
+  /** What counts: courses toward these graduation requirements, or in these departments. */
+  counts: { requirements?: string[]; departments?: string[] }
+  /** Named courses it expects ("a foundation in biology, chemistry and physics"). */
+  mustInclude?: MustInclude[]
+}
+
 export interface SchoolConfig {
   id: string
   name: string
@@ -219,6 +246,8 @@ export interface SchoolConfig {
   courses: Course[]
   /** Answers to the onboarding math question, in order. */
   mathPlacement: MathPlacementOption[]
+  /** Recommended programs beyond graduation (what universities expect). */
+  programs?: Program[]
   source: SourceRef
 }
 
@@ -246,21 +275,24 @@ export interface StudentState {
 
 export type Rigor = 'balanced' | 'challenging' | 'very-rigorous' | 'maximum'
 
-export type GoalId =
-  | 'maximize-rigor'
-  | 'stem'
-  | 'medicine'
-  | 'engineering'
-  | 'computer-science'
-  | 'business'
-  | 'humanities'
-  | 'arts'
-  | 'explore'
-  | 'athletics'
-  | 'extracurricular'
-  | 'balanced'
-  | 'max-ap'
-  | 'college'
+export const ALL_GOALS = [
+  'maximize-rigor',
+  'stem',
+  'medicine',
+  'engineering',
+  'computer-science',
+  'business',
+  'humanities',
+  'arts',
+  'explore',
+  'athletics',
+  'extracurricular',
+  'balanced',
+  'max-ap',
+  'college',
+] as const
+
+export type GoalId = (typeof ALL_GOALS)[number]
 
 export type ActivitySeason = 'fall' | 'winter' | 'spring' | 'year-round'
 

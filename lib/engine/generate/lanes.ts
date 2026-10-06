@@ -1,9 +1,10 @@
 import type { Catalog } from '../catalog.ts'
 import { ancestors, descendants } from '../graph.ts'
 import { evaluatePrerequisites, overlaySpans, type SpanLookup } from '../prereqs.ts'
+import { countsTowardProgram, programProgress, programsFor } from '../programs.ts'
 import { allocateRequirements, countsTowardAt } from '../requirements.ts'
 import { availabilityProblem, occupiedTerms, yearOfTerm } from '../terms.ts'
-import { TERM_COUNT, type Course, type MustInclude, type Placement, type Policy, type Requirement, type TermIndex } from '../types.ts'
+import { TERM_COUNT, type Course, type MustInclude, type Placement, type Policy, type Program, type ProgramRequirement, type Requirement, type TermIndex } from '../types.ts'
 import { advancedAt, emptyOverlay, extendOverlay, infeasibility, loadAt, type Overlay, type PlanningContext } from './context.ts'
 import { interestScore, isAdvanced, matchedGoals, rigorScore, workloadScore, type PreferenceModel } from './preferences.ts'
 
@@ -30,6 +31,11 @@ export interface Lane {
   affinity: number
   /** The part of `affinity` that isn't interest (college plans, rigor, balance). */
   baseAffinity: number
+  /**
+   * A recommended program's part (what universities expect), planned after
+   * graduation and never required: its gap is measured against the plan so far.
+   */
+  program?: { program: Program; requirement: ProgramRequirement }
 }
 
 export interface Track {
@@ -126,7 +132,66 @@ export function buildLanes(catalog: Catalog, model: PreferenceModel, fixed: Plac
       baseAffinity: 2,
     })
   }
-  return orderLanes(catalog, lanes, model)
+  return [...orderLanes(catalog, lanes, model), ...programLanes(catalog, model, fixed)]
+}
+
+/** One lane per part of each program the student's goals ask for. */
+function programLanes(catalog: Catalog, model: PreferenceModel, fixed: Placement[]): Lane[] {
+  const lanes: Lane[] = []
+  for (const program of programsFor(catalog, model.raw.goals)) {
+    const progress = programProgress(catalog, fixed, program)
+    for (const part of progress.requirements) {
+      const req = part.requirement
+      const courses = [...catalog.courses.values()].filter((c) => countsTowardProgram(c, req))
+      if (courses.length === 0) continue
+      const department = dominant(courses.map((c) => c.department))
+      const id = `program:${program.id}:${req.id}`
+      lanes.push({
+        id,
+        requirement: {
+          id,
+          name: req.name,
+          description: req.description,
+          credits: req.credits,
+          kind: 'category',
+          ...(req.mustInclude ? { mustInclude: req.mustInclude } : {}),
+          source: program.source,
+        },
+        department,
+        subject: subjectName(catalog, department) ?? req.name,
+        courseIds: courses.map((c) => c.id).sort(),
+        everyTerm: false,
+        deficit: part.remaining,
+        missingGroups: part.mustInclude.filter((m) => !m.satisfiedBy).map((m) => m.group),
+        sameSequence: false,
+        // What it expects, no more.
+        affinity: -4,
+        baseAffinity: -4,
+        program: { program, requirement: req },
+      })
+    }
+  }
+  return lanes
+}
+
+/**
+ * The still-missing group of a program the student is aiming for that names
+ * this course, if any: "a chemistry course" for Chemistry when the plan has none.
+ */
+export function programGroupFor(
+  catalog: Catalog,
+  model: PreferenceModel,
+  course: Course,
+  inPlan: (courseId: string) => boolean,
+): { program: string; label: string } | null {
+  for (const program of programsFor(catalog, model.raw.goals)) {
+    for (const part of program.requirements) {
+      for (const group of part.mustInclude ?? []) {
+        if (group.anyOf.includes(course.id) && !group.anyOf.some(inPlan)) return { program: program.name, label: group.label }
+      }
+    }
+  }
+  return null
 }
 
 /** A department's mid-sentence name: "math", "social studies", "English". */
@@ -246,6 +311,7 @@ export function laneWindow(catalog: Catalog, lane: Lane, startTerm: TermIndex, e
 export function reservedSeats(catalog: Catalog, lanes: Lane[], index: number, startTerm: TermIndex, excluded: Set<string>): number[] {
   const reserved: number[] = new Array(TERM_COUNT).fill(0)
   for (const lane of lanes.slice(index + 1)) {
+    if (lane.program) continue
     const window = laneWindow(catalog, lane, startTerm, excluded)
     if (window.size === 0) continue
     const perTerm = Math.max(...lane.courseIds.map((id) => catalog.courses.get(id)!).map((c) => c.credits / c.durationTerms))
@@ -262,6 +328,12 @@ export function reservedSeats(catalog: Catalog, lanes: Lane[], index: number, st
  * courses). Hard constraints prune; preferences only rank.
  */
 export function enumerateTracks(search: TrackSearch): Track[] {
+  if (search.lane.program) {
+    const { program, requirement } = search.lane.program
+    const part = programProgress(search.catalog, search.ctx.placements, program).requirements.find((r) => r.requirement.id === requirement.id)!
+    const lane = { ...search.lane, deficit: part.remaining, missingGroups: part.mustInclude.filter((m) => !m.satisfiedBy).map((m) => m.group) }
+    return tracksFor({ ...search, lane }, undefined)
+  }
   const { catalog, ctx, lane, model } = search
   const laneSet = new Set(lane.courseIds)
   const started = ctx.placements.some((p) => laneSet.has(p.courseId) && catalog.courses.get(p.courseId)?.sequence)
@@ -280,6 +352,10 @@ export function enumerateTracks(search: TrackSearch): Track[] {
 function tracksFor(search: TrackSearch, preferredSequence: string | undefined): Track[] {
   const { catalog, ctx, lane, model, startTerm } = search
   const maxLoad = catalog.school.load.max
+  // A program's part counts its own courses and is never required.
+  const optional = !!lane.program
+  const counts = (course: Course, term: TermIndex) =>
+    lane.program ? term >= 0 && countsTowardProgram(course, lane.program.requirement) : countsTowardAt(course, lane.id, term)
   const beamWidth = search.beamWidth ?? 40
   const leveled = new Set([...catalog.courses.values()].filter((c) => c.level !== 'standard').map((c) => c.department))
   const laneSet = new Set(lane.courseIds)
@@ -351,7 +427,7 @@ function tracksFor(search: TrackSearch, preferredSequence: string | undefined): 
     }
     let kept = next.filter((s) => {
       if (lane.everyTerm && search.strict && (!s.covered.has(fall) || !s.covered.has(spring))) return false
-      return s.credits + capacityAfter + 1e-9 >= target
+      return optional || s.credits + capacityAfter + 1e-9 >= target
     })
     if (lane.everyTerm && !search.strict) {
       kept = kept.map((s) => {
@@ -366,9 +442,11 @@ function tracksFor(search: TrackSearch, preferredSequence: string | undefined): 
   }
 
   const requiredInLane = [...search.required].filter((id) => laneSet.has(id))
-  const complete = states
+  const finished = states
     .filter((s) => s.credits + 1e-9 >= target)
     .filter((s) => lane.missingGroups.every((_, i) => s.satisfied.has(i)))
+  // A program lane that can't be finished still keeps as much as fits.
+  const complete = finished.length === 0 && optional ? states : finished
   // A requested course that can't sit in this lane's own slot (the lane is
   // full with pinned courses, say) is left for the elective pass to place.
   const withRequired = complete.filter((s) => requiredInLane.every((id) => s.overlay.ids.has(id) || ctx.has(id)))
@@ -452,7 +530,7 @@ function tracksFor(search: TrackSearch, preferredSequence: string | undefined): 
       score += scored.score
       reasons.set(reasonKey(course.id, term), scored.reasons)
       overlay = extendOverlay(catalog, overlay, { courseId: course.id, term, status: 'planned' })
-      if (countsTowardAt(course, lane.id, term)) credits += course.credits
+      if (counts(course, term)) credits += course.credits
       for (const t of occupiedTerms(term, course.durationTerms)) covered.add(t)
       lane.missingGroups.forEach((g, i) => {
         if (!satisfied.has(i) && g.anyOf.includes(course.id)) satisfied.add(i)
@@ -497,22 +575,44 @@ function tracksFor(search: TrackSearch, preferredSequence: string | undefined): 
     }, 0)
     const open = group >= 0 ? lane.deficit - creditsBefore : lane.deficit - creditsBefore - reserved
     // A course that only counts from a later grade is no progress yet.
-    const useful = countsTowardAt(course, lane.id, term) ? Math.min(course.credits, Math.max(0, open)) : 0
+    const useful = counts(course, term) ? Math.min(course.credits, Math.max(0, open)) : 0
     score += useful * 12
 
     if (group >= 0) {
       score += 15
-      reasons.push({
-        kind: 'requirement',
-        requirementId: lane.id,
-        text: `Required for ${lane.requirement.name}: your school asks for ${lane.missingGroups[group]!.label}.`,
-      })
+      reasons.push(
+        lane.program
+          ? { kind: 'goal', text: `${lane.program.program.name} expect ${lane.missingGroups[group]!.label}.` }
+          : {
+              kind: 'requirement',
+              requirementId: lane.id,
+              text: `Required for ${lane.requirement.name}: your school asks for ${lane.missingGroups[group]!.label}.`,
+            },
+      )
     } else if (useful > 0) {
-      reasons.push({
-        kind: 'requirement',
-        requirementId: lane.id,
-        text: `Counts toward ${lane.requirement.name} (${lane.requirement.credits} credits required).`,
-      })
+      reasons.push(
+        lane.program
+          ? {
+              kind: 'goal',
+              text: `Counts toward the ${lane.requirement.credits} credits of ${lane.requirement.name} ${lane.program.program.name} expect.`,
+            }
+          : {
+              kind: 'requirement',
+              requirementId: lane.id,
+              text: `Counts toward ${lane.requirement.name} (${lane.requirement.credits} credits required).`,
+            },
+      )
+    }
+
+    // A course a program the student is aiming for names (Illinois public
+    // universities expect chemistry and physics) is the better pick for any
+    // lane it counts in, so the program isn't left to squeeze it in later.
+    if (!lane.program) {
+      const named = programGroupFor(catalog, model, course, (id) => ctx.has(id) || overlay.ids.has(id))
+      if (named) {
+        score += 6
+        reasons.push({ kind: 'goal', text: `${named.program} expect ${named.label}.` })
+      }
     }
 
     // Pathway continuity: a prerequisite met by an earlier course in this lane.

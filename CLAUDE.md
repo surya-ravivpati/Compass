@@ -84,6 +84,9 @@ Breaking one of these is a bug even if the tests pass.
   `before`, `before-or-concurrent`, or `concurrent` (same time only).
 - Courses in the same `equivalenceGroup` cover the same material; taking two is a repeat.
 - Preferences only score; they never make something allowed or forbidden.
+- A school's `programs` (what universities expect, cited from the coursebook) are
+  targets, never graduation rules: the planner aims for one when the student's goal
+  asks, the validator reports its gaps as warnings, and validity never depends on it.
 - School policies (`math every semester`, `World History in freshman year`, `Health
   in sophomore year`, language continuity) are school config with `required` or
   `target` enforcement — not hard-coded.

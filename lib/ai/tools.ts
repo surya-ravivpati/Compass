@@ -1,5 +1,6 @@
 import {
   allocateRequirements,
+  programProgress,
   analyzeWorkload,
   buildPreferenceModel,
   describeGroup,
@@ -82,7 +83,8 @@ export const TOOL_DECLARATIONS: FunctionDeclaration[] = [
   },
   {
     name: 'get_requirements',
-    description: 'Graduation requirements and the student\'s progress: completed, in progress, planned, and remaining credits.',
+    description:
+      'Graduation requirements and the student\'s progress: completed, in progress, planned, and remaining credits. Also what the school says universities expect beyond graduation (a target, never a requirement) and how the plan measures up.',
   },
   {
     name: 'search_courses',
@@ -334,9 +336,33 @@ function requirements(ctx: ToolContext): ToolResult {
         status: r.status,
         must_include: r.mustInclude.map((m) => ({ label: m.group.label, covered: !!m.satisfiedBy })),
       })),
-      note: '"complete" means finished coursework; planned courses are never complete.',
+      beyond_graduation: (ctx.catalog.school.programs ?? []).map((program) => {
+        const p = programProgress(ctx.catalog, ctx.placements, program)
+        return {
+          expected_by: program.name,
+          description: program.description,
+          student_aims_for_it: ctx.preferences.goals.includes(program.goal),
+          plan_covers_it: p.covered,
+          parts: p.requirements.map((r) => ({
+            name: r.requirement.name,
+            expected: r.required,
+            completed: r.completed,
+            in_progress: r.inProgress,
+            planned: r.planned,
+            remaining: r.remaining,
+            must_include: r.mustInclude.map((m) => ({ label: m.group.label, covered: !!m.satisfiedBy })),
+          })),
+        }
+      }),
+      note: '"complete" means finished coursework; planned courses are never complete. beyond_graduation is a recommendation, not a graduation rule.',
     },
-    facts: [{ text: `Graduation requirements from ${ctx.catalog.school.source.document}.`, source: ctx.catalog.school.source.document }],
+    facts: [
+      { text: `Graduation requirements from ${ctx.catalog.school.source.document}.`, source: ctx.catalog.school.source.document },
+      ...(ctx.catalog.school.programs ?? []).map((program) => ({
+        text: `What ${program.name} expect, from ${program.source.document}${program.source.page ? `, page ${program.source.page}` : ''}.`,
+        source: program.source.document,
+      })),
+    ],
   }
 }
 

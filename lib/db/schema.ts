@@ -19,6 +19,7 @@ import type {
   MustInclude,
   Policy,
   Preferences,
+  Program,
   SourceRef,
 } from '../engine/types.ts'
 
@@ -40,6 +41,7 @@ export interface SchoolSettings {
   departments: Department[]
   policies: Policy[]
   mathPlacement: MathPlacementOption[]
+  programs?: Program[]
 }
 
 // ---------------------------------------------------------------- reference

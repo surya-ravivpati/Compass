@@ -3510,5 +3510,114 @@
       ],
       "description": "You’ll start with Geometry or Geometry AB/BC."
     }
+  ],
+  "programs": [
+    {
+      "id": "illinois-public-universities",
+      "name": "Illinois public universities",
+      "description": "Coursework Illinois public universities require or strongly encourage for admission. It goes beyond Stevenson’s graduation requirements.",
+      "goal": "college",
+      "source": {
+        "page": 7,
+        "quote": "The following high school program is either required or strongly encouraged for admission to all public universities in Illinois"
+      },
+      "requirements": [
+        {
+          "id": "english",
+          "name": "English",
+          "credits": 8,
+          "description": "Emphasis on written and oral communication and literature.",
+          "counts": {
+            "requirements": [
+              "english"
+            ]
+          }
+        },
+        {
+          "id": "math",
+          "name": "mathematics",
+          "credits": 6,
+          "description": "Including algebra, advanced algebra, geometry and/or trigonometry.",
+          "counts": {
+            "requirements": [
+              "math"
+            ]
+          },
+          "mustInclude": [
+            {
+              "label": "advanced algebra (Algebra 2)",
+              "anyOf": [
+                "algebra-2",
+                "algebra-2-ab-bc"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "science",
+          "name": "laboratory science",
+          "credits": 6,
+          "description": "Emphasis on laboratory sciences with a foundation in biology, chemistry and physics.",
+          "counts": {
+            "departments": [
+              "science"
+            ]
+          },
+          "mustInclude": [
+            {
+              "label": "a biology course",
+              "anyOf": [
+                "biology",
+                "ap-biology"
+              ]
+            },
+            {
+              "label": "a chemistry course",
+              "anyOf": [
+                "chemistry",
+                "ap-chemistry"
+              ]
+            },
+            {
+              "label": "a physics course",
+              "anyOf": [
+                "physics",
+                "ap-physics-1",
+                "ap-physics-2",
+                "ap-physics-c"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "social-studies",
+          "name": "social studies",
+          "credits": 6,
+          "description": "Emphasis on history and government.",
+          "counts": {
+            "requirements": [
+              "us-history",
+              "world-history",
+              "government",
+              "economics"
+            ]
+          }
+        },
+        {
+          "id": "electives",
+          "name": "language, applied arts or fine arts",
+          "credits": 4,
+          "description": "Four semesters in Multilingual Learning, Applied Arts or Fine Arts.",
+          "counts": {
+            "departments": [
+              "world-language",
+              "eld",
+              "applied-arts",
+              "fine-arts"
+            ]
+          }
+        }
+      ]
+    }
   ]
 }
