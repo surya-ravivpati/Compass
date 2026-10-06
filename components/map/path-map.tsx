@@ -341,7 +341,7 @@ function CardBody({
         compact ? 'px-2 py-1.5' : 'px-2.5 py-2'
       } ${state === 'dim' ? 'opacity-35' : ''} ${isDragging ? 'shadow-2xl shadow-black/60 ring-1 ring-signal' : ''}`}
     >
-      <span className={`line-clamp-3 font-medium leading-snug text-ink hyphens-auto [overflow-wrap:anywhere] ${compact ? 'text-[11.5px]' : 'text-[12.5px]'}`}>
+      <span className={`line-clamp-3 font-medium leading-snug text-ink hyphens-auto break-words ${compact ? 'text-[11.5px]' : 'text-[12.5px]'}`} title={course.name}>
         {course.name}
       </span>
       {!compact ? (
