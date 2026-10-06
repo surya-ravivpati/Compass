@@ -30,7 +30,7 @@ describe('the Stevenson catalog', () => {
 
   it('cites a coursebook page for every requirement and policy', () => {
     for (const item of [...built.school!.requirements, ...built.school!.policies]) {
-      expect(item.source, item.id).toMatchObject({ kind: 'catalog', document: 'coursed.pdf', page: expect.any(Number), quote: expect.any(String) })
+      expect(item.source, item.id).toMatchObject({ kind: 'catalog', document: 'Stevenson Coursebook 2026–27', page: expect.any(Number), quote: expect.any(String) })
     }
   })
 

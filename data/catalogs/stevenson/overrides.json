@@ -2,6 +2,7 @@
   "school": {
     "id": "stevenson",
     "name": "Adlai E. Stevenson High School",
+    "document": "Stevenson Coursebook 2026–27",
     "load": {
       "min": 6,
       "max": 7
@@ -2940,6 +2941,7 @@
           }
         ]
       ],
+      "name": "Political Thought and Its Literature (English credit)",
       "tags": [
         "humanities",
         "writing",
@@ -2977,6 +2979,7 @@
           }
         ]
       ],
+      "name": "Political Thought and Its Literature (social studies credit)",
       "tags": [
         "humanities",
         "civics"

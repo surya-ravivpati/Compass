@@ -63,6 +63,8 @@ export interface CatalogOverrides {
     name: string
     load: { min: number; max: number }
     totalCredits: number
+    /** The source document's title as students should read it ("Stevenson Coursebook 2026–27"); defaults to its file name. */
+    document?: string
     preHighSchoolCredit: boolean
     /**
      * The school's credit rule when course pages don't give a number

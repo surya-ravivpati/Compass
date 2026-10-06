@@ -7,10 +7,13 @@ export interface SchoolSummary {
   id: string
   name: string
   isDemo: boolean
+  /** The document its courses come from ("Stevenson Coursebook 2026–27"). */
+  source: string
 }
 
 export async function listSchools(db: Database): Promise<SchoolSummary[]> {
-  return db.select({ id: schools.id, name: schools.name, isDemo: schools.isDemo }).from(schools).orderBy(asc(schools.name))
+  const rows = await db.select({ id: schools.id, name: schools.name, isDemo: schools.isDemo, source: schools.source }).from(schools).orderBy(asc(schools.name))
+  return rows.map((r) => ({ id: r.id, name: r.name, isDemo: r.isDemo, source: r.source.document }))
 }
 
 const cache = new Map<string, { version: string; school: SchoolConfig }>()

@@ -23,6 +23,8 @@ export function buildSchool(draft: DraftCatalog, overrides: CatalogOverrides): B
   const errors: string[] = []
   const warnings: string[] = []
   const configSource: SourceRef = { kind: 'school-config', document: 'overrides.json (reviewed school configuration)' }
+  // Citations name the document as students know it, not its file name.
+  const sourceTitle = overrides.school.document ?? draft.document
 
   const deptFor = (name: string | null): string | null => {
     if (!name) return null
@@ -112,7 +114,7 @@ export function buildSchool(draft: DraftCatalog, overrides: CatalogOverrides): B
         ...(o.byPlacement ? { byPlacement: true } : {}),
         ...(o.expectsBackground ? { expectsBackground: true } : {}),
         ...(notesFor(d).length ? { notes: notesFor(d) } : {}),
-        source: d.source,
+        source: { ...d.source, document: sourceTitle },
       })
     }
   }
@@ -121,7 +123,7 @@ export function buildSchool(draft: DraftCatalog, overrides: CatalogOverrides): B
   }
 
   const cite = (c: CatalogCitation | undefined): SourceRef =>
-    c ? { kind: 'catalog', document: draft.document, page: c.page, quote: c.quote } : configSource
+    c ? { kind: 'catalog', document: sourceTitle, page: c.page, quote: c.quote } : configSource
   const requirements: Requirement[] = overrides.requirements.map((r) => ({
     id: r.id,
     name: r.name,
@@ -153,7 +155,7 @@ export function buildSchool(draft: DraftCatalog, overrides: CatalogOverrides): B
     courses,
     mathPlacement: overrides.mathPlacement ?? [],
     ...(overrides.programs?.length ? { programs: overrides.programs.map((p) => ({ ...p, source: cite(p.source) })) } : {}),
-    source: { kind: 'catalog', document: draft.document },
+    source: { kind: 'catalog', document: sourceTitle },
   }
   for (const issue of validateCatalog(school)) {
     ;(issue.severity === 'error' ? errors : warnings).push(`${issue.path}: ${issue.message}`)
