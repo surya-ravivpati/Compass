@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import type { Route } from 'next'
-import { placementPhrase } from '@/lib/engine'
+import { placementPhrase, type SourceRef } from '@/lib/engine'
 import { planInsights } from '@/lib/insights'
 import { loadWorkspace } from '@/lib/workspace'
 import { fmt, REQUIREMENT_STATUS } from '@/components/requirements/requirement-list'
@@ -128,6 +128,7 @@ export default async function RequirementsPage() {
                   </ul>
                 </div>
               ) : null}
+              <RequirementSource source={r.requirement.source} />
               {r.status === 'missing' ? (
                 <p className="mt-4 text-[13px] text-danger">
                   {r.remaining > 0 ? `Still needs ${fmt(r.remaining)} more credit${r.remaining === 1 ? '' : 's'}.` : 'Still needs a required course.'}{' '}
@@ -170,5 +171,24 @@ export default async function RequirementsPage() {
         <p className="mt-2 text-xs text-fog">Source: {ws.school.source.document}</p>
       </section>
     </main>
+  )
+}
+
+/** Where a requirement comes from: the school's own words and page, when it has them. */
+function RequirementSource({ source }: { source: SourceRef }) {
+  const where = `${source.document}${source.page ? `, page ${source.page}` : ''}`
+  if (source.quote) {
+    return (
+      <figure className="mt-4 border-t border-line pt-3 text-xs">
+        <blockquote className="leading-relaxed text-mist">“{source.quote}”</blockquote>
+        <figcaption className="mt-1 text-fog">{where}</figcaption>
+      </figure>
+    )
+  }
+  return (
+    <p className="mt-4 border-t border-line pt-3 text-xs text-fog">
+      Source: {where}
+      {source.kind === 'seed' ? ' — fictional development data, not a real school’s requirements.' : ''}
+    </p>
   )
 }
