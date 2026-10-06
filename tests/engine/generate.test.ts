@@ -219,11 +219,16 @@ describe('students already partway through high school', () => {
       history.push({ courseId: id, term, status: 'completed' })
     }
     const r = generatePlan({ catalog: demo, student: { startTerm: 4 }, history, preferences: prefs() })
-    const electives = r.plan.placements.filter((p) => p.status === 'planned' && demo.courses.get(p.courseId)!.satisfies.length === 0)
-    expect(electives.length).toBeLessThanOrEqual(2)
-    // Two years can't hold three science credits alongside everything else, so
-    // Compass says why rather than inventing a schedule.
-    if (r.status !== 'valid') expect(r.problems.length).toBeGreaterThan(0)
+    // Two years can't hold what's left (Biology is for 9th and 10th graders), so
+    // Compass says why rather than inventing a schedule, and still plans the
+    // requirements that fit before any elective.
+    expect(r.status).toBe('no-valid-schedule')
+    expect(r.problems.some((p) => p.message.includes('Biology'))).toBe(true)
+    for (let t = 4; t < 8; t++) {
+      expect(coursesIn(demo, r.plan, t).filter((c) => c.satisfies.length === 0).length, `term ${t}`).toBeLessThanOrEqual(2)
+    }
+    // Nothing it did place is reported as missing.
+    expect(r.problems.some((p) => p.message.includes('Social Studies'))).toBe(false)
   })
 
   it('reports NO VALID SCHEDULE with reasons when requirements cannot fit', () => {
@@ -231,6 +236,19 @@ describe('students already partway through high school', () => {
     expect(r.status).toBe('no-valid-schedule')
     expect(r.problems.length).toBeGreaterThan(0)
     expect(r.problems.every((p) => p.message.length > 20)).toBe(true)
+  })
+
+  it('still plans everything else when one requirement cannot fit', () => {
+    const r = generatePlan({
+      catalog: demo,
+      student: { startTerm: 0 },
+      history: preHighSchool('pre-algebra'),
+      preferences: prefs(),
+      exclude: ['us-history', 'ap-us-history'],
+    })
+    expect(r.status).toBe('no-valid-schedule')
+    expect(r.problems.some((p) => p.message.includes('U.S. History'))).toBe(true)
+    for (let t = 0; t < 8; t++) expect(coursesIn(demo, r.plan, t).length, `term ${t}`).toBeGreaterThanOrEqual(5)
   })
 
   it('keeps pinned courses exactly where the student put them', () => {

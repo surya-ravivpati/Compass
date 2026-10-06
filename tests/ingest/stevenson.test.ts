@@ -8,12 +8,17 @@ const read = <T>(file: string) => JSON.parse(readFileSync(`data/catalogs/stevens
 const built = buildSchool(read<DraftCatalog>('extracted.json'), read<CatalogOverrides>('overrides.json'))
 const catalog = buildCatalog(built.school!)
 const algebra1: Placement[] = [{ courseId: 'algebra-1', term: -1, status: 'completed' }]
+const geometry: Placement[] = [...algebra1, { courseId: 'geometry', term: -1, status: 'completed' }]
 
 const PROFILES: [string, Placement[], Partial<Preferences>][] = [
   ['Math 8, balanced', [], { rigor: 'balanced', goals: [] }],
   ['Algebra 1 done, engineering, very rigorous', algebra1, { rigor: 'very-rigorous', goals: ['engineering', 'stem'] }],
   ['Math 8, arts', [], { rigor: 'challenging', goals: ['arts'] }],
   ['Algebra 1 done, business and humanities', algebra1, { rigor: 'challenging', goals: ['business', 'humanities'] }],
+  // Algebra 2 opens in 10th grade, so math waits a year: the plan must still fit.
+  ['Geometry done before high school', geometry, { rigor: 'balanced', goals: [] }],
+  // U.S. History fits only junior year; electives mustn't crowd it out.
+  ['Math 8, engineering, challenging', [], { rigor: 'challenging', goals: ['engineering'] }],
 ]
 
 describe('the Stevenson catalog', () => {

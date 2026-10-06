@@ -13,7 +13,7 @@ import {
 import { validatePlan, type Finding, type ValidationReport } from '../validate.ts'
 import { PlanningContext } from './context.ts'
 import { fillElectives } from './fill.ts'
-import { buildLanes, enumerateTracks, reasonKey, type Lane, type PlacementReason, type Track } from './lanes.ts'
+import { buildLanes, enumerateTracks, reasonKey, reservedSeats, type Lane, type PlacementReason, type Track } from './lanes.ts'
 import { buildPreferenceModel, GOAL_LABELS } from './preferences.ts'
 
 export type { PlacementReason } from './lanes.ts'
@@ -132,6 +132,7 @@ export function generatePlan(input: GenerateInput): GenerateResult {
   })
 
   const lanes = buildLanes(catalog, model, fixed)
+  const reservations = lanes.map((_, i) => reservedSeats(catalog, lanes, i, student.startTerm, excluded))
   const reasons = new Map<string, PlacementReason[]>()
   for (const p of input.history) {
     reasons.set(reasonKey(p.courseId, p.term), [
@@ -177,6 +178,9 @@ export function generatePlan(input: GenerateInput): GenerateResult {
     return validation.graduationPathValid && fill.unplaced.length === 0 ? candidate : null
   }
 
+  // A second pass may skip a requirement that can't fit, so the student gets
+  // the rest of a plan with that one conflict named, never an empty map.
+  let skipUnfit = false
   const search = (
     index: number,
     ctx: PlanningContext,
@@ -187,13 +191,13 @@ export function generatePlan(input: GenerateInput): GenerateResult {
     if (attempts >= MAX_FULL_ATTEMPTS || trackSearches >= MAX_TRACK_SEARCHES) return null
     const lane = lanes[index]!
     trackSearches++
-    const base = { catalog, ctx, lane, model, startTerm: student.startTerm, excluded, required: new Set(required), anchors }
+    const base = { catalog, ctx, lane, model, startTerm: student.startTerm, excluded, required: new Set(required), anchors, reserved: reservations[index]! }
     let tracks: Track[] = enumerateTracks({ ...base, strict: true })
     if (tracks.length === 0 && lane.everyTerm) tracks = enumerateTracks({ ...base, strict: false })
     tracksEvaluated += tracks.length
     if (tracks.length === 0) {
       laneFailures.set(lane.id, lane)
-      return null
+      return skipUnfit ? search(index + 1, ctx, trackReasons, laneCourseIds) : null
     }
     for (const track of tracks) {
       const next = ctx.clone()
@@ -207,7 +211,13 @@ export function generatePlan(input: GenerateInput): GenerateResult {
     return null
   }
 
-  const found = search(0, new PlanningContext(catalog, fixed), new Map(), new Set(fixed.map((p) => p.courseId)))
+  let found = search(0, new PlanningContext(catalog, fixed), new Map(), new Set(fixed.map((p) => p.courseId)))
+  if (!found && !best) {
+    skipUnfit = true
+    attempts = 0
+    trackSearches = 0
+    found = search(0, new PlanningContext(catalog, fixed), new Map(), new Set(fixed.map((p) => p.courseId)))
+  }
 
   stages.push({
     id: 'preferences',
@@ -233,7 +243,13 @@ export function generatePlan(input: GenerateInput): GenerateResult {
     } courses placed · ${errors.length === 0 ? 'no conflicts' : `${errors.length} conflict${errors.length === 1 ? '' : 's'}`}`,
   })
 
-  const problems: Finding[] = found ? [] : [...laneProblems(catalog, laneFailures, excluded), ...errors]
+  // A requirement the search couldn't place may still have been met by the
+  // elective pass; only the ones the final plan misses are problems.
+  const met = (id: string | undefined) => {
+    const status = result.validation.progress.requirements.find((r) => r.requirement.id === id)?.status
+    return status !== undefined && status !== 'missing'
+  }
+  const problems: Finding[] = found ? [] : [...laneProblems(catalog, laneFailures, excluded).filter((p) => !met(p.requirementId)), ...errors]
   return {
     status: found ? 'valid' : 'no-valid-schedule',
     plan: result.plan,

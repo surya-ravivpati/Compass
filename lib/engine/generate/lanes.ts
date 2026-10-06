@@ -2,7 +2,7 @@ import type { Catalog } from '../catalog.ts'
 import { ancestors, descendants } from '../graph.ts'
 import { evaluatePrerequisites, overlaySpans, type SpanLookup } from '../prereqs.ts'
 import { allocateRequirements, countsTowardAt } from '../requirements.ts'
-import { occupiedTerms, yearOfTerm } from '../terms.ts'
+import { availabilityProblem, occupiedTerms, yearOfTerm } from '../terms.ts'
 import { TERM_COUNT, type Course, type MustInclude, type Placement, type Policy, type Requirement, type TermIndex } from '../types.ts'
 import { emptyOverlay, extendOverlay, infeasibility, loadAt, type Overlay, type PlanningContext } from './context.ts'
 import { interestScore, matchedGoals, rigorScore, workloadScore, type PreferenceModel } from './preferences.ts'
@@ -126,7 +126,7 @@ export function buildLanes(catalog: Catalog, model: PreferenceModel, fixed: Plac
       baseAffinity: 2,
     })
   }
-  return orderLanes(catalog, lanes)
+  return orderLanes(catalog, lanes, model)
 }
 
 /** A department's mid-sentence name: "math", "social studies", "English". */
@@ -158,12 +158,17 @@ function dominant(values: string[]): string {
   return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0]?.[0] ?? ''
 }
 
-function orderLanes(catalog: Catalog, lanes: Lane[]): Lane[] {
+function orderLanes(catalog: Catalog, lanes: Lane[], model: PreferenceModel): Lane[] {
+  // A course the school places students in is never planned unless asked for,
+  // so it shouldn't decide the order (American Studies would tie U.S. History
+  // to English).
+  const plannable = (id: string) => !catalog.courses.get(id)?.byPlacement || model.targets.has(id)
   const owner = new Map<string, string>()
-  for (const lane of lanes) for (const id of lane.courseIds) if (!owner.has(id)) owner.set(id, lane.id)
+  for (const lane of lanes) for (const id of lane.courseIds) if (plannable(id) && !owner.has(id)) owner.set(id, lane.id)
   const deps = new Map<string, Set<string>>(lanes.map((l) => [l.id, new Set<string>()]))
   for (const lane of lanes) {
     for (const id of lane.courseIds) {
+      if (!plannable(id)) continue
       for (const group of catalog.courses.get(id)!.prerequisites) {
         for (const option of group.anyOf) {
           const other = owner.get(option.courseId)
@@ -215,6 +220,40 @@ export interface TrackSearch {
   keep?: number
   /** Where courses sat in the plan being re-planned, by course. */
   anchors?: Map<string, Set<TermIndex>>
+  /** Seats per term that requirements planned after this lane will need. */
+  reserved?: number[]
+}
+
+/** The terms a lane's courses can occupy, by grade and season. */
+export function laneWindow(catalog: Catalog, lane: Lane, startTerm: TermIndex, excluded: Set<string>): Set<TermIndex> {
+  const terms = new Set<TermIndex>()
+  for (const id of lane.courseIds) {
+    if (excluded.has(id)) continue
+    const course = catalog.courses.get(id)!
+    for (let t = startTerm; t < TERM_COUNT; t++) {
+      if (availabilityProblem(course, t)) continue
+      for (const u of occupiedTerms(t, course.durationTerms)) if (u < TERM_COUNT) terms.add(u)
+    }
+  }
+  return terms
+}
+
+/**
+ * Seats each term must keep for the lanes after `index`: one for every lane
+ * that needs most of its window (English and P.E. every semester, U.S.
+ * History in junior year). A lane with room to spare reserves nothing.
+ */
+export function reservedSeats(catalog: Catalog, lanes: Lane[], index: number, startTerm: TermIndex, excluded: Set<string>): number[] {
+  const reserved: number[] = new Array(TERM_COUNT).fill(0)
+  for (const lane of lanes.slice(index + 1)) {
+    const window = laneWindow(catalog, lane, startTerm, excluded)
+    if (window.size === 0) continue
+    const perTerm = Math.max(...lane.courseIds.map((id) => catalog.courses.get(id)!).map((c) => c.credits / c.durationTerms))
+    const needed = lane.everyTerm ? window.size : Math.max(lane.missingGroups.length > 0 ? 1 : 0, Math.ceil(lane.deficit / perTerm - 1e-9))
+    if (needed === 0 || needed * 2 < window.size) continue
+    for (const t of window) reserved[t]! += 1
+  }
+  return reserved
 }
 
 /**
@@ -277,18 +316,33 @@ function tracksFor(search: TrackSearch, preferredSequence: string | undefined): 
   ]
 
   const startYear = Math.floor(startTerm / 2)
-  // A lane holds at most one course per term -- one credit a year -- so a
-  // student who starts late may not be able to cover the whole deficit here.
-  const freeYears: number[] = []
-  for (let y = startYear; y < TERM_COUNT / 2; y++) {
-    if (!fixedTerms.has(y * 2) || !fixedTerms.has(y * 2 + 1)) freeYears.push(y)
+  // A lane holds at most one course per term, so a year takes one full-year
+  // course or two semester courses: one credit at a school that counts a year
+  // as a credit, two where each semester is one. A student who starts late
+  // may not be able to cover the whole deficit here.
+  const laneCourses = lane.courseIds.map((id) => catalog.courses.get(id)!)
+  const yearCourseCredits = Math.max(0, ...laneCourses.filter((c) => c.durationTerms === 2).map((c) => c.credits))
+  const termCourseCredits = Math.max(0, ...laneCourses.filter((c) => c.durationTerms === 1).map((c) => c.credits))
+  const capacity = (year: number): number => {
+    const fall = year * 2
+    const freeFall = fall >= startTerm && !fixedTerms.has(fall)
+    const freeSpring = fall + 1 >= startTerm && !fixedTerms.has(fall + 1)
+    if (freeFall && freeSpring) return Math.max(yearCourseCredits, 2 * termCourseCredits)
+    if (!freeFall && !freeSpring) return 0
+    // One open semester; a full-year course can still run alongside a pinned one.
+    return fall >= startTerm ? Math.max(yearCourseCredits, termCourseCredits) : termCourseCredits
   }
-  const target = Math.min(lane.deficit, freeYears.length)
+  const capacityFrom = (year: number) => {
+    let total = 0
+    for (let y = Math.max(year, startYear); y < TERM_COUNT / 2; y++) total += capacity(y)
+    return total
+  }
+  const target = Math.min(lane.deficit, capacityFrom(startYear))
 
   for (let year = startYear; year < TERM_COUNT / 2; year++) {
     const fall = year * 2
     const spring = fall + 1
-    const freeYearsAfter = freeYears.filter((y) => y > year).length
+    const capacityAfter = capacityFrom(year + 1)
     const next: SearchState[] = []
     for (const state of states) {
       for (const picks of optionsFor(state, fall, spring)) {
@@ -297,7 +351,7 @@ function tracksFor(search: TrackSearch, preferredSequence: string | undefined): 
     }
     let kept = next.filter((s) => {
       if (lane.everyTerm && search.strict && (!s.covered.has(fall) || !s.covered.has(spring))) return false
-      return s.credits + freeYearsAfter + 1e-9 >= target
+      return s.credits + capacityAfter + 1e-9 >= target
     })
     if (lane.everyTerm && !search.strict) {
       kept = kept.map((s) => {
@@ -553,6 +607,12 @@ function tracksFor(search: TrackSearch, preferredSequence: string | undefined): 
     // course is there at all leaves the slot to the elective pass.
     const extraAffinity = lane.everyTerm ? lane.affinity : lane.baseAffinity + 3 * Math.min(interest, 2)
     score += (course.credits - useful) * (reasons.length > 0 ? extraAffinity : Math.min(extraAffinity, -4))
+    // An extra course never takes a seat that a requirement still to be
+    // planned needs (Game Development can't crowd U.S. History out of junior year).
+    if (useful === 0 && group < 0 && !lane.everyTerm && search.reserved) {
+      const maxLoad = catalog.school.load.max
+      if (occupiedTerms(term, course.durationTerms).some((t) => loadAt(ctx, overlay, t) + 1 > maxLoad - search.reserved![t]!)) score -= 40
+    }
     // Earlier is slightly better for required work; later-only courses are unaffected.
     score -= term * 0.05
     // Tiny nudge toward courses that keep doors open, for the curious.
