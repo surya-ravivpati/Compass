@@ -1,6 +1,6 @@
 import { validateCatalog } from '../engine/catalog.ts'
 import type { Course, Level, PrereqGroup, Requirement, SchoolConfig, SourceRef, Workload } from '../engine/types.ts'
-import { courseCodes, normalizeName, slugify } from './normalize.ts'
+import { courseCodes, normalizeName, readableName, slugify } from './normalize.ts'
 import type { CatalogCitation, CatalogOverrides, DraftCatalog, DraftCourse } from './types.ts'
 
 export interface BuildResult {
@@ -92,7 +92,7 @@ export function buildSchool(draft: DraftCatalog, overrides: CatalogOverrides): B
       courses.push({
         id: d.id,
         ...(d.code ? { code: d.code } : {}),
-        name: d.name,
+        name: o.name ?? readableName(d.name),
         department,
         description: d.description ?? '',
         credits,

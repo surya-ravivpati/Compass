@@ -68,6 +68,7 @@ in Health), FAFSA or opt-out, and the school-day ACT (p119).
 
 ## Course corrections
 
+- **Names.** The coursebook prints most course names in capitals; Compass shows them in title case ("AP U.S. History", "Introduction to Engineering Design–PLTW") and keeps abbreviations in capitals. Names printed in mixed case are kept exactly. Set `"name"` on a course in `overrides.json` to change how one reads.
 - **Levels.** AP → AP. Honors/Accelerated → honors: the GPA table on p10 groups them. College-level math (Linear Algebra, Multivariable) → post-AP. Everything else → standard. **Interpreted:** Accelerated is treated as honors.
 - **Repeatable courses** (25): only where the course text says "may be repeated for credit".
 - **Equivalent courses** (taking both is a repeat): English 9 sections, English 11 sections, Geometry, Algebra 2, Precalculus, Calculus, U.S. History, Government, Personal Finance, Sociology, Earth Science, AP Psychology, AP Comparative Government, Political Thought, and Spanish 3 / Spanish 2-3, Spanish 4 / Spanish 3-4. **Interpreted** from matching course content.

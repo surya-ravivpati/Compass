@@ -31,6 +31,28 @@ export function normalizeName(name: string): string {
   return slugify(name).replace(/-/g, ' ')
 }
 
+/** Abbreviations that stay in capitals when a name is re-cased. */
+const CAPITALS = new Set(['2D', '3D', 'AB', 'AP', 'BC', 'CSI', 'ELD', 'P.E.', 'PLTW', 'U.S.'])
+const MINOR_WORDS = new Set(['a', 'an', 'and', 'as', 'at', 'by', 'for', 'in', 'of', 'on', 'or', 'the', 'to', 'with'])
+
+/**
+ * A course name as students read it. Coursebooks often print titles in
+ * capitals ("AP U.S. HISTORY"); Compass shows those in title case ("AP U.S.
+ * History"), keeping abbreviations and letter suffixes ("AP Physics C"). A
+ * name already printed in mixed case is left exactly as printed.
+ */
+export function readableName(name: string): string {
+  const letters = name.replace(/[^A-Za-z]/g, '')
+  if (!letters || letters !== letters.toUpperCase()) return name
+  return name.replace(/[A-Za-z0-9][A-Za-z0-9.'’]*/g, (word: string, offset: number) => {
+    if (CAPITALS.has(word) || word.length === 1 || /\d/.test(word)) return word
+    const lower = word.toLowerCase()
+    const startsPhrase = offset === 0 || /[:(–—-]\s*$/.test(name.slice(0, offset))
+    if (!startsPhrase && MINOR_WORDS.has(lower)) return lower
+    return lower.charAt(0).toUpperCase() + lower.slice(1)
+  })
+}
+
 const GRADES = new Set([9, 10, 11, 12])
 
 /**

@@ -88,6 +88,8 @@ export interface CatalogOverrides {
   courses?: Record<
     string,
     Partial<{
+      /** The name to show, when the automatic re-casing of a capitalized name gets it wrong. */
+      name: string
       durationTerms: 1 | 2
       credits: number
       grades: GradeLevel[]

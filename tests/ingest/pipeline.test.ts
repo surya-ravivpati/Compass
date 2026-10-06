@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { buildSchool } from '../../lib/ingest/build.ts'
 import { extractCatalog, extractPdfPages, readCatalog } from '../../lib/ingest/extract.ts'
-import { courseCodes, mergeRawCourses } from '../../lib/ingest/normalize.ts'
+import { courseCodes, mergeRawCourses, readableName } from '../../lib/ingest/normalize.ts'
 import type { CatalogOverrides, DraftCatalog } from '../../lib/ingest/types.ts'
 import { buildCatalog, generatePlan, DEFAULT_PREFERENCES } from '../../lib/engine/index.ts'
 
@@ -60,6 +60,22 @@ describe('draft merging', () => {
     expect(courseCodes('MTH451 452')).toEqual(['MTH451', 'MTH452'])
     expect(courseCodes('0405/0406')).toEqual(['0405', '0406'])
     expect(courseCodes(null)).toEqual([])
+  })
+
+  it('re-cases capitalized names for reading, keeping abbreviations', () => {
+    expect(readableName('AP U.S. HISTORY')).toBe('AP U.S. History')
+    expect(readableName('ENGLISH 9: BELONGING AND BECOMING: STORIES, CULTURE AND POSSIBILITY')).toBe(
+      'English 9: Belonging and Becoming: Stories, Culture and Possibility',
+    )
+    expect(readableName('POLITICAL THOUGHT AND ITS LITERATURE')).toBe('Political Thought and Its Literature')
+    expect(readableName('FRESHMAN FOUNDATIONAL FITNESS CHOICE P.E.')).toBe('Freshman Foundational Fitness Choice P.E.')
+    expect(readableName('INTRODUCTION TO ENGINEERING DESIGN–PLTW')).toBe('Introduction to Engineering Design–PLTW')
+    expect(readableName('AP GOVERNMENT–UNITED STATES')).toBe('AP Government–United States')
+    expect(readableName('AP ART: DRAWING, 2D AND 3D DESIGN')).toBe('AP Art: Drawing, 2D and 3D Design')
+    expect(readableName('AP PHYSICS C')).toBe('AP Physics C')
+    // Printed in mixed case already: left exactly as printed.
+    expect(readableName('Geometry AB/BC')).toBe('Geometry AB/BC')
+    expect(readableName('Law Enforcement and CSI')).toBe('Law Enforcement and CSI')
   })
 
   it('treats records that share a course code as one course, whatever their names', () => {
@@ -147,6 +163,15 @@ describe('catalog build', () => {
     expect(result.school!.courses.find((c) => c.id === 'statistics')!.notes).toEqual(['Prerequisite: Junior or senior classification.'])
     // Wording already read as courses isn't repeated.
     expect(result.school!.courses.find((c) => c.id === 'geometry')!.notes).toBeUndefined()
+  })
+
+  it('shows a name printed in capitals in title case, unless a reviewer names it', () => {
+    const d = draft()
+    d.courses.find((c) => c.id === 'statistics')!.name = 'AP STATISTICS'
+    const o = overrides()
+    o.courses = { statistics: { seasons: ['spring'] }, 'ap-calculus': { credits: 1, name: 'AP Calculus AB' } }
+    const names = Object.fromEntries(buildSchool(d, o).school!.courses.map((c) => [c.id, c.name]))
+    expect(names).toEqual({ 'algebra-1': 'Algebra 1', geometry: 'Geometry', statistics: 'AP Statistics', 'ap-calculus': 'AP Calculus AB' })
   })
 
   it('reports a prerequisite that names no course', () => {
