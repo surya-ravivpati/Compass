@@ -155,6 +155,9 @@ export function previewEdit(
  * already in the plan stay where they were whenever they can. Returns null
  * when no valid plan keeps the edit.
  */
+/** The most changes a re-plan may propose when nothing smaller fixes the plan. */
+const LARGEST_REPLAN = 8
+
 export function replanAround(
   catalog: Catalog,
   student: StudentState,
@@ -192,6 +195,9 @@ export function replanAround(
     { seed: (p) => broken.has(keyOf(p)) || departments.has(departmentOf(p.courseId)) || elective(p.courseId), maxChanges: 4 },
   ]
   const tried = new Set<string>()
+  // A bigger re-plan is still better than a proposal that leaves the plan
+  // broken, so the smallest one over the limit is kept as a last resort.
+  let larger: Cascade | null = null
   for (const { seed, maxChanges } of tiers) {
     const released = releaseFrom(seed)
     // Releasing nothing still lets the planner add what the edit left missing.
@@ -215,10 +221,15 @@ export function replanAround(
             : 'Makes room for this change.',
       })),
     ]
-    if (changes.length === 0 || changes.length > maxChanges) continue
-    return { plan: result.plan, changes, validation: result.validation, summary: summarizeChanges(catalog, changes) }
+    if (changes.length === 0) continue
+    const cascade = { plan: result.plan, changes, validation: result.validation, summary: summarizeChanges(catalog, changes) }
+    if (changes.length > maxChanges) {
+      if (changes.length <= LARGEST_REPLAN && (!larger || changes.length < larger.changes.length)) larger = cascade
+      continue
+    }
+    return cascade
   }
-  return null
+  return larger
 
   /** The planned placements handed back to the planner for one tier. */
   function releaseFrom(seed: (p: Placement) => boolean): Set<Placement> {
@@ -308,15 +319,23 @@ export function repairDependents(
       if (availabilityProblem(course, t)) continue
       if (!evaluatePrerequisites(course, t, spans).satisfied) continue
       // Courses that build on this one and would break with it here move on
-      // anyway, so their seats count as free. One allowed to run alongside it
-      // (AP Physics C with AP Calculus BC) stays where it is.
-      const spansAt = indexSpans(catalog, [...without, { courseId: course.id, term: t, status: 'planned' }])
-      const casualties = without.filter(
-        (p) =>
-          p.status === 'planned' &&
-          downstream.has(p.courseId) &&
-          !evaluatePrerequisites(catalog.courses.get(p.courseId)!, p.term, spansAt).satisfied,
-      )
+      // anyway, and so do the ones built on them (Differential Equations after
+      // Multivariable Calculus), so their seats count as free. One allowed to
+      // run alongside it (AP Physics C with AP Calculus BC) stays where it is.
+      const here: Placement = { courseId: course.id, term: t, status: 'planned' }
+      const casualties: Placement[] = []
+      for (;;) {
+        const spansAt = indexSpans(catalog, [...without.filter((p) => !casualties.includes(p)), here])
+        const broken = without.filter(
+          (p) =>
+            p.status === 'planned' &&
+            downstream.has(p.courseId) &&
+            !casualties.includes(p) &&
+            !evaluatePrerequisites(catalog.courses.get(p.courseId)!, p.term, spansAt).satisfied,
+        )
+        if (broken.length === 0) break
+        casualties.push(...broken)
+      }
       const load = new Array(TERM_COUNT).fill(0)
       for (const p of without) {
         if (casualties.includes(p)) continue

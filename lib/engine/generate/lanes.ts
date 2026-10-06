@@ -4,8 +4,8 @@ import { evaluatePrerequisites, overlaySpans, type SpanLookup } from '../prereqs
 import { allocateRequirements, countsTowardAt } from '../requirements.ts'
 import { availabilityProblem, occupiedTerms, yearOfTerm } from '../terms.ts'
 import { TERM_COUNT, type Course, type MustInclude, type Placement, type Policy, type Requirement, type TermIndex } from '../types.ts'
-import { emptyOverlay, extendOverlay, infeasibility, loadAt, type Overlay, type PlanningContext } from './context.ts'
-import { interestScore, matchedGoals, rigorScore, workloadScore, type PreferenceModel } from './preferences.ts'
+import { advancedAt, emptyOverlay, extendOverlay, infeasibility, loadAt, type Overlay, type PlanningContext } from './context.ts'
+import { interestScore, isAdvanced, matchedGoals, rigorScore, workloadScore, type PreferenceModel } from './preferences.ts'
 
 export interface PlacementReason {
   kind: 'history' | 'pinned' | 'requirement' | 'pathway' | 'policy' | 'every-term' | 'goal' | 'target' | 'rigor' | 'fill'
@@ -551,6 +551,13 @@ function tracksFor(search: TrackSearch, preferredSequence: string | undefined): 
     const rigor = rigorScore(model, course, core ? 3 : 1)
     score += rigor
     if (core && model.desiredLevel >= 1.8) score += (course.workload - 3) * 0.8
+    // Past the AP load the student signed up for, an AP has to be wanted.
+    if (isAdvanced(course)) {
+      for (const t of occupiedTerms(term, course.durationTerms)) {
+        const excess = advancedAt(ctx, overlay, t) + 1 - model.apComfort
+        if (excess > 0) score -= 3 * excess
+      }
+    }
     if (course.expectsBackground && interestScore(model, course) === 0) score -= 2.5
     if ((course.level === 'honors' || course.level === 'ap' || course.level === 'post-ap') && rigor > -1.5) {
       reasons.push({ kind: 'rigor', text: 'Matches the challenge level you chose.' })

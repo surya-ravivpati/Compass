@@ -112,6 +112,17 @@ export function infeasibility(
   return null
 }
 
+/** AP and college-level courses in a term, on top of the context and an overlay. */
+export function advancedAt(ctx: PlanningContext, overlay: Overlay, term: TermIndex): number {
+  let n = 0
+  for (const p of [...ctx.placements, ...overlay.placements]) {
+    if (p.term < 0) continue
+    const course = ctx.catalog.courses.get(p.courseId)
+    if (course && (course.level === 'ap' || course.level === 'post-ap') && occupiedTerms(p.term, course.durationTerms).includes(term)) n++
+  }
+  return n
+}
+
 export function loadAt(ctx: PlanningContext, overlay: Overlay, term: TermIndex): number {
   return ctx.occupancy[term]! + (overlay.occupancy.get(term) ?? 0)
 }

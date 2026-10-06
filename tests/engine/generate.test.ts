@@ -224,10 +224,11 @@ describe('students already partway through high school', () => {
     // requirements that fit before any elective.
     expect(r.status).toBe('no-valid-schedule')
     expect(r.problems.some((p) => p.message.includes('Biology'))).toBe(true)
-    for (let t = 4; t < 8; t++) {
-      expect(coursesIn(demo, r.plan, t).filter((c) => c.satisfies.length === 0).length, `term ${t}`).toBeLessThanOrEqual(2)
-    }
-    // Nothing it did place is reported as missing.
+    // Everything that can still fit is planned: only science (Biology is
+    // closed to a junior), P.E. (closed too) and the elective credits that
+    // two years can't hold are missing, and only those are reported.
+    const missing = r.validation.progress.requirements.filter((x) => x.status === 'missing').map((x) => x.requirement.id)
+    expect(missing.sort()).toEqual(['electives', 'pe', 'science'])
     expect(r.problems.some((p) => p.message.includes('Social Studies'))).toBe(false)
   })
 

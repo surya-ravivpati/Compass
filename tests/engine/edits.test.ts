@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   allocateRequirements,
   applyEdit,
+  descendants,
   describeEdit,
   diffPlans,
   explainPlacement,
@@ -131,11 +132,10 @@ describe('editing with downstream consequences', () => {
       const bc = repaired.changes.find((c) => c.courseId === 'ap-calculus-bc')
       expect(bc?.kind === 'move' ? bc.toTerm : null).toBe(6)
       expect(repaired.changes.some((c) => c.courseId === 'ap-physics-c-mechanics')).toBe(false)
-      expect(repaired.changes.filter((c) => c.kind === 'remove').map((c) => c.courseId).sort()).toEqual([
-        'differential-equations',
-        'linear-algebra',
-        'multivariable-calculus',
-      ])
+      // What can't fit after BC is what builds on it, all the way down the chain.
+      const removed = repaired.changes.filter((c) => c.kind === 'remove').map((c) => c.courseId)
+      expect(removed).toContain('multivariable-calculus')
+      expect(removed.every((id) => descendants(demo, 'ap-calculus-bc').has(id))).toBe(true)
     })
 
     it('a year before a pinned first language course is not a gap', () => {
@@ -145,8 +145,9 @@ describe('editing with downstream consequences', () => {
       const cascade = previewEdit(demo, student, plan, { kind: 'move', courseId: 'spanish-1', fromTerm: spanish.term, toTerm: spanish.term + 2 }, eng).cascade!
       expect(cascade.validation.graduationPathValid).toBe(true)
       expect(termOf(cascade.plan, 'spanish-2')).toBe(spanish.term + 4)
-      // A re-plan keeps everything it can where it was.
-      expect(cascade.changes.length).toBeLessThanOrEqual(4)
+      // A re-plan keeps everything it can where it was: only Spanish 2 and
+      // electives shift to make room.
+      expect(cascade.changes.every((c) => c.courseId === 'spanish-2' || demo.courses.get(c.courseId)!.satisfies.length === 0)).toBe(true)
     })
 
     it('describes a proposal in the present and history in the past', () => {

@@ -52,6 +52,12 @@ export interface PreferenceModel {
   tagGoals: Map<string, GoalId | 'interest'>
   /** Preferred rigor on a 0 (standard) to 3 (post-AP) scale. */
   desiredLevel: number
+  /**
+   * AP or college-level courses a semester the student signed up for:
+   * "some AP" is two, "AP in most core subjects" four. More only where the
+   * student's interest outweighs it.
+   */
+  apComfort: number
   /** Courses per term the generator fills to. */
   targetLoad: number
   protectTime: boolean
@@ -95,6 +101,12 @@ export function buildPreferenceModel(prefs: Preferences, school: SchoolConfig): 
   if (goals.has('balanced')) desiredLevel -= 0.4
   desiredLevel = Math.min(3, Math.max(0, desiredLevel))
 
+  const comfort: Record<Preferences['rigor'], number> = { balanced: 1, challenging: 2, 'very-rigorous': 4, maximum: Infinity }
+  let apComfort = comfort[prefs.rigor]
+  if (goals.has('maximize-rigor')) apComfort = Infinity
+  if (goals.has('max-ap')) apComfort += 2
+  if (prefs.balanceFirst || goals.has('balanced')) apComfort = Math.min(apComfort, 1)
+
   const protectTime = goals.has('athletics') || goals.has('extracurricular') || prefs.activities.length > 0
   const balanceFirst = prefs.balanceFirst || goals.has('balanced')
 
@@ -117,6 +129,7 @@ export function buildPreferenceModel(prefs: Preferences, school: SchoolConfig): 
     interests,
     tagGoals,
     desiredLevel,
+    apComfort,
     targetLoad,
     protectTime,
     balanceFirst,
@@ -159,6 +172,11 @@ export function rigorScore(model: PreferenceModel, course: Course, weight: numbe
   let score = -Math.abs(levelIndex(course.level) - desired) * weight
   if (model.maxAp && course.level === 'ap') score += 2
   return score
+}
+
+/** AP and college-level courses: what the student's AP comfort counts. */
+export function isAdvanced(course: Course): boolean {
+  return course.level === 'ap' || course.level === 'post-ap'
 }
 
 /** Heavier courses cost more for students protecting time. */

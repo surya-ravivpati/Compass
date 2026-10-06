@@ -2,11 +2,11 @@ import type { Catalog } from '../catalog.ts'
 import { ancestors, descendants } from '../graph.ts'
 import { evaluatePrerequisites } from '../prereqs.ts'
 import { allocateRequirements, countsTowardAt } from '../requirements.ts'
-import { placementPhrase, termLabel, yearOfTerm } from '../terms.ts'
+import { occupiedTerms, placementPhrase, termLabel, yearOfTerm } from '../terms.ts'
 import { TERM_COUNT, type Course, type TermIndex } from '../types.ts'
-import { emptyOverlay, infeasibility, type PlanningContext } from './context.ts'
+import { advancedAt, emptyOverlay, infeasibility, type PlanningContext } from './context.ts'
 import { ANCHOR_KEPT, ANCHOR_SAME_TERM, reasonKey, sequenceContinuity, type PlacementReason } from './lanes.ts'
-import { interestScore, matchedGoals, rigorScore, workloadScore, type PreferenceModel } from './preferences.ts'
+import { interestScore, isAdvanced, matchedGoals, rigorScore, workloadScore, type PreferenceModel } from './preferences.ts'
 
 export interface FillArgs {
   catalog: Catalog
@@ -181,6 +181,13 @@ export function fillElectives(args: FillArgs): FillResult {
     let s = interestScore(model, course) * 3
     s += rigorScore(model, course, 1.5)
     s += workloadScore(model, course, term)
+    // Past the AP load the student signed up for, an AP has to be wanted.
+    if (isAdvanced(course)) {
+      for (const t of occupiedTerms(term, course.durationTerms)) {
+        const excess = advancedAt(ctx, none, t) + 1 - model.apComfort
+        if (excess > 0) s -= 3 * excess
+      }
+    }
     const year = yearOfTerm(term)
     const interested = interestScore(model, course) > 0
     const sameDepartment = ctx.placements.filter((p) => catalog.courses.get(p.courseId)?.department === course.department)
