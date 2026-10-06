@@ -77,7 +77,8 @@ export function PlanWorkspace(props: WorkspaceProps) {
   const view = viewChoice ?? (narrow ? 'list' : 'map')
   const [historyOpen, setHistoryOpen] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
-  const [sheetOpen, setSheetOpen] = useState(false)
+  // Opened by choosing a course (not by dragging one), so the layout never shifts mid-drag.
+  const [detailsOpen, setDetailsOpen] = useState(!!props.initialSelected)
   const [compareOpen, setCompareOpen] = useState(false)
   const [busy, startTransition] = useTransition()
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -231,7 +232,7 @@ export function PlanWorkspace(props: WorkspaceProps) {
 
   const select = (key: string | null) => {
     setSelected(key)
-    if (key && narrow) setSheetOpen(true)
+    setDetailsOpen(!!key)
   }
 
   const restore = (versionId: string) => {
@@ -263,16 +264,17 @@ export function PlanWorkspace(props: WorkspaceProps) {
       reasons={reasons}
       selected={selected}
       onEdit={(edit) => {
-        setSheetOpen(false)
+        setDetailsOpen(false)
         requestEdit(edit)
       }}
       onClose={() => {
         setSelected(null)
-        setSheetOpen(false)
+        setDetailsOpen(false)
       }}
       onSelect={setSelected}
     />
   ) : null
+  const besideMap = !narrow && detailsOpen && !!inspector
 
   return (
     <div onKeyDown={onKeyDown}>
@@ -369,7 +371,9 @@ export function PlanWorkspace(props: WorkspaceProps) {
         </span>
       </section>
 
-      <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px] 2xl:grid-cols-[minmax(0,1fr)_340px]">
+      {/* On laptop widths the map takes the full width (eight semesters need it) and course details
+          open beside it only while a course is open; wide screens keep the side panel. */}
+      <div className={`mt-5 grid gap-5 2xl:grid-cols-[minmax(0,1fr)_340px] ${besideMap ? 'lg:grid-cols-[minmax(0,1fr)_300px]' : ''}`}>
         <div className="min-w-0">
           {view === 'map' ? (
             <div className="surface p-2 md:p-3">
@@ -392,7 +396,7 @@ export function PlanWorkspace(props: WorkspaceProps) {
           )}
         </div>
 
-        <aside aria-label="Details" className="hidden lg:block">
+        <aside aria-label="Details" className={besideMap ? 'hidden lg:block' : 'hidden 2xl:block'}>
           <div className="surface sticky top-6 max-h-[calc(100dvh-3rem)] overflow-y-auto p-5">
             {(!narrow && inspector) || (
               <PlanSummaryPanel validation={validation} notes={workload.notes.map((n) => n.text)} onFix={(edit) => requestEdit(edit)} />
@@ -401,14 +405,14 @@ export function PlanWorkspace(props: WorkspaceProps) {
         </aside>
       </div>
 
-      <div className="mt-5 lg:hidden">
+      <div className="mt-5 2xl:hidden">
         <div className="surface p-5">
-          <PlanSummaryPanel validation={validation} notes={workload.notes.map((n) => n.text)} onFix={(edit) => requestEdit(edit)} />
+          <PlanSummaryPanel wide validation={validation} notes={workload.notes.map((n) => n.text)} onFix={(edit) => requestEdit(edit)} />
         </div>
       </div>
 
-      <Dialog open={narrow && sheetOpen && !!selected} onClose={() => setSheetOpen(false)} title="Course details">
-        {narrow && sheetOpen ? inspector : null}
+      <Dialog open={narrow && detailsOpen && !!selected} onClose={() => setDetailsOpen(false)} title="Course details">
+        {narrow && detailsOpen ? inspector : null}
       </Dialog>
 
       {props.primary ? (
@@ -471,67 +475,72 @@ function PlanSummaryPanel({
   validation,
   notes,
   onFix,
+  wide = false,
 }: {
   validation: ReturnType<typeof validatePlan>
   notes: string[]
   onFix: (edit: PlanEdit) => void
+  /** Under the map: the checks beside the status instead of below it. */
+  wide?: boolean
 }) {
   const issues = validation.findings.filter((f) => f.severity !== 'info')
   return (
-    <div>
+    <div className={wide ? 'grid gap-x-10 md:grid-cols-[minmax(0,340px)_minmax(0,1fr)]' : ''}>
       <PlanStatus validation={validation} />
-      <div className="mt-6 border-t border-line pt-5">
-        <h2 className="eyebrow">{issues.length ? 'Needs your attention' : 'Checks'}</h2>
-        {issues.length ? (
-          <ul className="mt-3 space-y-3">
-            {issues.slice(0, 8).map((f) => (
-              <li key={f.id} className="text-sm">
-                <p className="flex gap-2">
-                  <StatusIcon status={f.severity === 'error' ? 'invalid' : 'attention'} size={15} />
-                  <span className="text-mist">{f.message}</span>
-                </p>
-                {f.fixes?.length ? (
-                  <div className="mt-2 flex flex-wrap gap-1.5 pl-6">
-                    {f.fixes.slice(0, 2).map((fix) => (
-                      <button
-                        key={fix.label}
-                        type="button"
-                        className="btn btn-ghost btn-sm"
-                        onClick={() =>
-                          onFix(
-                            fix.kind === 'move'
-                              ? { kind: 'move', courseId: fix.courseId, fromTerm: fix.fromTerm, toTerm: fix.toTerm }
-                              : fix.kind === 'add'
-                                ? { kind: 'add', courseId: fix.courseId, term: fix.term }
-                                : { kind: 'remove', courseId: fix.courseId, term: fix.term },
-                          )
-                        }
-                      >
-                        {fix.label}
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="mt-3 text-sm text-mist">Every course is in order. Select a course to see why it’s there, what it needs, and what it opens.</p>
-        )}
-      </div>
-      {notes.length ? (
+      <div className={wide ? 'md:[&>*:first-child]:mt-0 md:[&>*:first-child]:border-t-0 md:[&>*:first-child]:pt-0' : ''}>
         <div className="mt-6 border-t border-line pt-5">
-          <h2 className="eyebrow">Workload tradeoffs</h2>
-          <ul className="mt-3 space-y-2 text-[13px] text-mist">
-            {notes.map((n) => (
-              <li key={n}>{n}</li>
-            ))}
-          </ul>
+          <h2 className="eyebrow">{issues.length ? 'Needs your attention' : 'Checks'}</h2>
+          {issues.length ? (
+            <ul className="mt-3 space-y-3">
+              {issues.slice(0, 8).map((f) => (
+                <li key={f.id} className="text-sm">
+                  <p className="flex gap-2">
+                    <StatusIcon status={f.severity === 'error' ? 'invalid' : 'attention'} size={15} />
+                    <span className="text-mist">{f.message}</span>
+                  </p>
+                  {f.fixes?.length ? (
+                    <div className="mt-2 flex flex-wrap gap-1.5 pl-6">
+                      {f.fixes.slice(0, 2).map((fix) => (
+                        <button
+                          key={fix.label}
+                          type="button"
+                          className="btn btn-ghost btn-sm"
+                          onClick={() =>
+                            onFix(
+                              fix.kind === 'move'
+                                ? { kind: 'move', courseId: fix.courseId, fromTerm: fix.fromTerm, toTerm: fix.toTerm }
+                                : fix.kind === 'add'
+                                  ? { kind: 'add', courseId: fix.courseId, term: fix.term }
+                                  : { kind: 'remove', courseId: fix.courseId, term: fix.term },
+                            )
+                          }
+                        >
+                          {fix.label}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-3 text-sm text-mist">Every course is in order. Select a course to see why it’s there, what it needs, and what it opens.</p>
+          )}
         </div>
-      ) : null}
-      <p className="mt-6 text-xs text-fog">
-        Want to try a different route without changing this plan? <Link href="/what-if" className="link">Open What If?</Link>
-      </p>
+        {notes.length ? (
+          <div className="mt-6 border-t border-line pt-5">
+            <h2 className="eyebrow">Workload tradeoffs</h2>
+            <ul className="mt-3 space-y-2 text-[13px] text-mist">
+              {notes.map((n) => (
+                <li key={n}>{n}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+        <p className="mt-6 text-xs text-fog">
+          Want to try a different route without changing this plan? <Link href="/what-if" className="link">Open What If?</Link>
+        </p>
+      </div>
     </div>
   )
 }
