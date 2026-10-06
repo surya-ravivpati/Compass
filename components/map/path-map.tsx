@@ -337,11 +337,14 @@ function CardBody({
       aria-pressed={state === 'selected'}
       onClick={() => onSelect?.(state === 'selected' ? null : cell.key)}
       style={style}
-      className={`group flex h-full w-full touch-none flex-col justify-between rounded-[9px] border text-left transition-[opacity,background-color,border-color,box-shadow] duration-200 ${border} ${bg} ${
+      className={`@container group flex h-full w-full touch-none flex-col justify-between rounded-[9px] border text-left transition-[opacity,background-color,border-color,box-shadow] duration-200 ${border} ${bg} ${
         compact ? 'px-2 py-1.5' : 'px-2.5 py-2'
       } ${state === 'dim' ? 'opacity-35' : ''} ${isDragging ? 'shadow-2xl shadow-black/60 ring-1 ring-signal' : ''}`}
     >
-      <span className={`line-clamp-3 font-medium leading-snug text-ink hyphens-auto break-words ${compact ? 'text-[11.5px]' : 'text-[12.5px]'}`} title={course.name}>
+      <span
+        className={`line-clamp-3 font-medium leading-snug text-ink hyphens-auto break-words ${compact ? 'text-[10.5px] @[7.5rem]:text-[11.5px]' : 'text-[11px] @[7.5rem]:text-[12.5px]'}`}
+        title={course.name}
+      >
         {course.name}
       </span>
       {!compact ? (

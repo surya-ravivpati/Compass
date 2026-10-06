@@ -155,9 +155,9 @@ export default async function RequirementsPage() {
       {progress.extra.length ? (
         <section aria-labelledby="extra-title" className="surface mt-6 p-5">
           <h2 id="extra-title" className="eyebrow">
-            Beyond the requirements
+            Extra credits
           </h2>
-          <p className="mt-2 text-sm text-mist">Credits from these courses go past what every requirement needs.</p>
+          <p className="mt-2 text-sm text-mist">These courses earn credit beyond what every graduation requirement needs.</p>
           <ul className="mt-3 flex flex-wrap gap-1.5">
             {progress.extra.map((a) => (
               <li key={`${a.courseId}@${a.term}`} className="rounded-md border border-line px-2 py-1 text-xs text-mist">

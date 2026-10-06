@@ -1,5 +1,7 @@
 import Link from 'next/link'
 import { getViewer } from '@/lib/auth/viewer'
+import { getDb } from '@/lib/db/client'
+import { listSchools } from '@/lib/db/schools'
 import { samplePlan } from '@/lib/sample'
 import { RouteField } from '@/components/marketing/route-field'
 import { SamplePlan } from '@/components/marketing/sample-plan'
@@ -9,6 +11,7 @@ import { IconArrowRight, IconCheckCircle } from '@/components/ui/icons'
 export default async function Home() {
   const viewer = await getViewer()
   const sample = samplePlan()
+  const realSchools = (await listSchools(await getDb())).filter((s) => !s.isDemo)
   const primaryHref = viewer ? (viewer.student.onboarded ? '/home' : '/onboarding') : '/sign-up'
   const primaryLabel = viewer ? (viewer.student.onboarded ? 'Open my plan' : 'Finish my plan') : 'Build My Plan'
 
@@ -53,6 +56,16 @@ export default async function Home() {
                   Explore Compass
                 </a>
               </div>
+              {realSchools.length ? (
+                <ul className="mt-7 space-y-1 text-sm text-mist">
+                  {realSchools.map((s) => (
+                    <li key={s.id} className="flex items-center gap-2">
+                      <span className="h-1.5 w-1.5 rounded-full bg-signal" aria-hidden />
+                      Planning with {s.name}’s real catalog, from the {s.source}.
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
             </div>
           </div>
         </section>
@@ -218,7 +231,7 @@ export default async function Home() {
       <footer className="border-t border-line">
         <div className="mx-auto flex max-w-[1240px] flex-col gap-2 px-5 py-8 text-sm text-fog md:flex-row md:justify-between md:px-8">
           <span>Compass</span>
-          <span>The demo catalog is fictional development data, not a real school’s requirements.</span>
+          <span>The sample plan uses the demo catalog: fictional development data, not a real school’s requirements.</span>
         </div>
       </footer>
     </div>

@@ -10,6 +10,7 @@ import { PlanOverview } from '@/components/plan/plan-overview'
 import { PlanStatus } from '@/components/plan/plan-status'
 import { fmt, RequirementBars } from '@/components/requirements/requirement-list'
 import { IconAlert, IconArrowRight, IconInfo } from '@/components/ui/icons'
+import { StatusIcon } from '@/components/ui/status'
 
 export const metadata: Metadata = { title: 'Home' }
 
@@ -121,6 +122,21 @@ export default async function HomePage() {
           <div className="mt-4">
             <RequirementBars progress={validation.progress} compact />
           </div>
+          {validation.programs
+            .filter((p) => student.preferences.goals.includes(p.program.goal))
+            .map((p) => (
+              <Link
+                key={p.program.id}
+                href="/requirements"
+                className="mt-5 flex items-center justify-between gap-3 border-t border-line pt-4 text-[13px] hover:text-ink"
+              >
+                <span className="text-mist">What {p.program.name} expect</span>
+                <span className="flex shrink-0 items-center gap-1.5">
+                  <StatusIcon status={p.covered ? 'valid' : 'attention'} size={13} />
+                  <span className={p.covered ? 'text-ok' : 'text-warn'}>{p.covered ? 'Covered' : 'Not yet'}</span>
+                </span>
+              </Link>
+            ))}
         </section>
 
         <section aria-labelledby="next-title" className="surface order-first p-5 lg:order-none">

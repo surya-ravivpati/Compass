@@ -161,7 +161,7 @@ export default async function CoursePage(props: PageProps<'/explore/[courseId]'>
           <Fact label="Offered" value={course.durationTerms === 2 ? 'Full year, starts in fall' : course.seasons.map((s) => (s === 'fall' ? 'Fall' : 'Spring')).join(' or ')} />
           <Fact label={course.workloadEstimated ? 'Workload (estimated)' : 'Typical workload'} value={`${WORKLOAD[course.workload]}${course.lab ? ' · lab' : ''}`} />
           <Fact label="Counts toward" value={requirementNames.length ? requirementNames.join(', ') : 'Electives'} />
-          <Fact label="Grades" value={gradeList(course.grades)} />
+          <Fact label="Grades" value={gradeRange(course.grades)} />
         </dl>
         <p className="mt-2 text-xs text-fog">
           {course.workloadEstimated ? 'The catalog doesn’t state a workload; this is estimated from the course level.' : 'Workload is the catalog’s estimate, not a rule.'}
@@ -236,3 +236,10 @@ function Fact({ label, value }: { label: string; value: string }) {
   )
 }
 
+/** "10–12", "9, 11", or "12th grade only": the value under a "Grades" label. */
+function gradeRange(grades: number[]): string {
+  const sorted = [...grades].sort((a, b) => a - b)
+  if (sorted.length === 1) return `${sorted[0]}th grade only`
+  const contiguous = sorted.every((g, i) => i === 0 || g === sorted[i - 1]! + 1)
+  return contiguous ? `${sorted[0]}–${sorted[sorted.length - 1]}` : sorted.join(', ')
+}

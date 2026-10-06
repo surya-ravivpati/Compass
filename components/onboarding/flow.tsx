@@ -16,6 +16,7 @@ interface SchoolOption {
   id: string
   name: string
   isDemo: boolean
+  source: string
 }
 
 interface Answers {
@@ -221,7 +222,9 @@ export function OnboardingFlow({
                   >
                     <span>
                       <span className="block font-medium">{s.name}</span>
-                      {s.isDemo ? <span className="mt-0.5 block text-sm text-mist">Demo catalog — fictional development data, not a real school’s requirements.</span> : null}
+                      <span className="mt-0.5 block text-sm text-mist">
+                        {s.isDemo ? 'Demo catalog — fictional development data, not a real school’s requirements.' : `Courses and requirements from the ${s.source}.`}
+                      </span>
                     </span>
                     {answers.schoolId === s.id ? <IconCheck className="text-signal" /> : null}
                   </button>

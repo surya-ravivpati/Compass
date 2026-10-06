@@ -236,8 +236,9 @@ export function fillElectives(args: FillArgs): FillResult {
     }
     if (programGroupFor(catalog, model, course, (id) => ctx.has(id))) s += 6
     // Between otherwise equal electives, the one more courses build on keeps
-    // more doors open (not the one that comes first alphabetically).
-    s += Math.min(descendants(catalog, course.id).size, 4) * 0.05
+    // more doors open (not the one that comes first alphabetically), while
+    // there is still a semester left to walk through them.
+    if (term + course.durationTerms < TERM_COUNT) s += Math.min(descendants(catalog, course.id).size, 4) * 0.05
     if (model.targets.has(course.id)) s += 60
     else if ([...model.targets].some((t) => ancestors(catalog, t).has(course.id))) s += 10
     if (model.avoid.has(course.id)) s -= 60
