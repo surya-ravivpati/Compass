@@ -192,9 +192,10 @@ export function fillElectives(args: FillArgs): FillResult {
     const interested = interestScore(model, course) > 0
     const sameDepartment = ctx.placements.filter((p) => catalog.courses.get(p.courseId)?.department === course.department)
     const sameDepartmentThisYear = sameDepartment.filter((p) => p.term >= 0 && yearOfTerm(p.term) === year).length
-    // Doubling up a core subject in one year should come from real interest.
+    // Doubling up a subject in one year should come from real interest; a
+    // subject the student wants more of costs much less.
     const core = catalog.departments.get(course.department)?.lane ?? false
-    s -= sameDepartmentThisYear * (core ? 2.5 : 1.2)
+    s -= sameDepartmentThisYear * (core ? 2.5 : 1.2) * (interested ? 0.4 : 1)
     // Breadth: a department the plan hasn't touched is worth a look.
     const electivesInDepartment = sameDepartment.filter((p) => !args.laneCourseIds.has(p.courseId)).length
     if (sameDepartment.length === 0) s += 1
@@ -215,7 +216,7 @@ export function fillElectives(args: FillArgs): FillResult {
     }
     // An intro course after an advanced one in the same department reads backwards.
     if (course.prerequisites.length === 0 && course.grades.includes(9)) {
-      const advanced = sameDepartment.some((p) => (catalog.courses.get(p.courseId)?.prerequisites.length ?? 0) > 0)
+      const advanced = sameDepartment.some((p) => p.term < term && (catalog.courses.get(p.courseId)?.prerequisites.length ?? 0) > 0)
       if (advanced) s -= 3
     }
     // Ensembles and courses with a recommended background are for students
@@ -224,7 +225,9 @@ export function fillElectives(args: FillArgs): FillResult {
     // Building on an earlier elective makes a path, not a pile.
     const spans = ctx.spans
     const result = evaluatePrerequisites(course, term, spans)
-    if (result.groups.some((g) => g.match && !args.laneCourseIds.has(g.match.span.courseId))) s += 2.5
+    // (Only in a subject the student cares about: otherwise one filler would
+    // turn into a four-year path nobody asked for.)
+    if (interested && result.groups.some((g) => g.match && !args.laneCourseIds.has(g.match.span.courseId))) s += 2.5
     // A language level after a gap year is harder to pick up again.
     if (sequenceContinuity(catalog, spans, course, term) < 0) s -= 3
     if (course.prerequisites.length === 0 && interestScore(model, course) > 0) {
@@ -232,6 +235,9 @@ export function fillElectives(args: FillArgs): FillResult {
       if (opens.length > 0) s += 1
     }
     if (programGroupFor(catalog, model, course, (id) => ctx.has(id))) s += 6
+    // Between otherwise equal electives, the one more courses build on keeps
+    // more doors open (not the one that comes first alphabetically).
+    s += Math.min(descendants(catalog, course.id).size, 4) * 0.05
     if (model.targets.has(course.id)) s += 60
     else if ([...model.targets].some((t) => ancestors(catalog, t).has(course.id))) s += 10
     if (model.avoid.has(course.id)) s -= 60

@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest'
 import {
   allocateRequirements,
   applyEdit,
-  descendants,
   describeEdit,
   diffPlans,
   explainPlacement,
+  generatePlan,
   previewEdit,
   repairDependents,
   runScenario,
@@ -106,10 +106,21 @@ describe('editing with downstream consequences', () => {
   })
 
   describe('when senior year is already full of math', () => {
-    // Engineering goals fill senior year with semester math (Discrete Math,
-    // Multivariable Calculus) and AP Physics C, which runs alongside BC.
+    // An engineering student with senior year full of semester math (Discrete
+    // Math, Multivariable Calculus, then Differential Equations and Linear
+    // Algebra) and AP Physics C, which runs alongside BC. Pinned, so the
+    // scenario doesn't depend on which electives the planner prefers.
     const eng = prefs({ rigor: 'very-rigorous', goals: ['engineering', 'stem'] })
-    const plan = generateFor('geometry', eng).plan
+    const pins = [
+      planned('ap-precalculus', 2),
+      planned('ap-calculus-bc', 4),
+      planned('discrete-mathematics', 6),
+      planned('multivariable-calculus', 6),
+      planned('ap-physics-c-mechanics', 6),
+      planned('differential-equations', 7),
+      planned('linear-algebra', 7),
+    ]
+    const plan = generatePlan({ catalog: demo, student, history: preHighSchool('geometry'), preferences: eng, pins }).plan
     const precalc = plan.placements.find((p) => p.courseId === 'ap-precalculus')!
     const edit = { kind: 'move' as const, courseId: 'ap-precalculus', fromTerm: precalc.term, toTerm: precalc.term + 2 }
 
@@ -133,9 +144,11 @@ describe('editing with downstream consequences', () => {
       expect(bc?.kind === 'move' ? bc.toTerm : null).toBe(6)
       expect(repaired.changes.some((c) => c.courseId === 'ap-physics-c-mechanics')).toBe(false)
       // What can't fit after BC is what builds on it, all the way down the chain.
-      const removed = repaired.changes.filter((c) => c.kind === 'remove').map((c) => c.courseId)
-      expect(removed).toContain('multivariable-calculus')
-      expect(removed.every((id) => descendants(demo, 'ap-calculus-bc').has(id))).toBe(true)
+      expect(repaired.changes.filter((c) => c.kind === 'remove').map((c) => c.courseId).sort()).toEqual([
+        'differential-equations',
+        'linear-algebra',
+        'multivariable-calculus',
+      ])
     })
 
     it('a year before a pinned first language course is not a gap', () => {

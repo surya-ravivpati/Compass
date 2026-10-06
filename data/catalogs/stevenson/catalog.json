@@ -3202,7 +3202,8 @@
       "tags": [
         "social-studies",
         "humanities",
-        "psychology"
+        "psychology",
+        "health-science"
       ],
       "satisfies": [],
       "equivalenceGroup": "ap-psychology",
@@ -3262,7 +3263,8 @@
       "tags": [
         "social-studies",
         "humanities",
-        "psychology"
+        "psychology",
+        "health-science"
       ],
       "satisfies": [],
       "equivalenceGroup": "ap-psychology",
@@ -5125,7 +5127,8 @@
       "workload": 2,
       "workloadEstimated": true,
       "tags": [
-        "applied-arts"
+        "applied-arts",
+        "culinary"
       ],
       "satisfies": [
         "required-electives"
@@ -5161,7 +5164,8 @@
       "workload": 2,
       "workloadEstimated": true,
       "tags": [
-        "applied-arts"
+        "applied-arts",
+        "culinary"
       ],
       "satisfies": [
         "required-electives"
@@ -5756,7 +5760,9 @@
       "workload": 2,
       "workloadEstimated": true,
       "tags": [
-        "applied-arts"
+        "applied-arts",
+        "education",
+        "psychology"
       ],
       "satisfies": [
         "required-electives"
@@ -5792,7 +5798,9 @@
       "workload": 2,
       "workloadEstimated": true,
       "tags": [
-        "applied-arts"
+        "applied-arts",
+        "education",
+        "psychology"
       ],
       "satisfies": [
         "required-electives"
@@ -6626,7 +6634,10 @@
       "workload": 2,
       "workloadEstimated": true,
       "tags": [
-        "applied-arts"
+        "applied-arts",
+        "health-science",
+        "wellness",
+        "culinary"
       ],
       "satisfies": [
         "required-electives"
@@ -6663,7 +6674,8 @@
       "workload": 2,
       "workloadEstimated": true,
       "tags": [
-        "applied-arts"
+        "applied-arts",
+        "culinary"
       ],
       "satisfies": [
         "required-electives"
@@ -7341,7 +7353,8 @@
       "workload": 2,
       "workloadEstimated": true,
       "tags": [
-        "applied-arts"
+        "applied-arts",
+        "culinary"
       ],
       "satisfies": [
         "required-electives"
@@ -7833,7 +7846,9 @@
       "workload": 2,
       "workloadEstimated": true,
       "tags": [
-        "applied-arts"
+        "applied-arts",
+        "education",
+        "psychology"
       ],
       "satisfies": [
         "required-electives"
@@ -8515,7 +8530,8 @@
       "workload": 2,
       "workloadEstimated": true,
       "tags": [
-        "applied-arts"
+        "applied-arts",
+        "life-skills"
       ],
       "satisfies": [
         "required-electives"
@@ -10272,7 +10288,8 @@
       "tags": [
         "social-studies",
         "humanities",
-        "psychology"
+        "psychology",
+        "health-science"
       ],
       "satisfies": [],
       "notes": [
@@ -11143,7 +11160,9 @@
       "workload": 2,
       "workloadEstimated": true,
       "tags": [
-        "applied-arts"
+        "applied-arts",
+        "education",
+        "psychology"
       ],
       "satisfies": [
         "required-electives"
@@ -11189,7 +11208,9 @@
       "workload": 2,
       "workloadEstimated": true,
       "tags": [
-        "applied-arts"
+        "applied-arts",
+        "education",
+        "psychology"
       ],
       "satisfies": [
         "required-electives"

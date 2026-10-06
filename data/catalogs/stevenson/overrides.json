@@ -1145,7 +1145,8 @@
       ],
       "tags": [
         "humanities",
-        "psychology"
+        "psychology",
+        "health-science"
       ]
     },
     "ap-psychology-blended-option": {
@@ -1172,7 +1173,8 @@
       "byPlacement": true,
       "tags": [
         "humanities",
-        "psychology"
+        "psychology",
+        "health-science"
       ]
     },
     "ap-spanish-language-and-culture": {
@@ -1604,11 +1606,17 @@
     },
     "culinary-arts-1": {
       "level": "standard",
-      "byPlacement": true
+      "byPlacement": true,
+      "tags": [
+        "culinary"
+      ]
     },
     "culinary-arts-2": {
       "level": "standard",
-      "byPlacement": true
+      "byPlacement": true,
+      "tags": [
+        "culinary"
+      ]
     },
     "current-events": {
       "level": "standard",
@@ -1756,11 +1764,19 @@
     },
     "early-education-and-teaching-1": {
       "level": "standard",
-      "byPlacement": true
+      "byPlacement": true,
+      "tags": [
+        "education",
+        "psychology"
+      ]
     },
     "early-education-and-teaching-2": {
       "level": "standard",
-      "byPlacement": true
+      "byPlacement": true,
+      "tags": [
+        "education",
+        "psychology"
+      ]
     },
     "earth-science": {
       "level": "standard",
@@ -1978,6 +1994,11 @@
       "seasons": [
         "fall",
         "spring"
+      ],
+      "tags": [
+        "health-science",
+        "wellness",
+        "culinary"
       ]
     },
     "food-preparation": {
@@ -1985,6 +2006,9 @@
       "seasons": [
         "fall",
         "spring"
+      ],
+      "tags": [
+        "culinary"
       ]
     },
     "french-1": {
@@ -2158,6 +2182,9 @@
       "seasons": [
         "fall",
         "spring"
+      ],
+      "tags": [
+        "culinary"
       ]
     },
     "government": {
@@ -2328,6 +2355,10 @@
       "seasons": [
         "fall",
         "spring"
+      ],
+      "tags": [
+        "education",
+        "psychology"
       ]
     },
     "interior-design": {
@@ -2507,6 +2538,9 @@
       "seasons": [
         "fall",
         "spring"
+      ],
+      "tags": [
+        "life-skills"
       ]
     },
     "lifeguard-training-and-certification": {
@@ -3028,7 +3062,8 @@
       ],
       "tags": [
         "humanities",
-        "psychology"
+        "psychology",
+        "health-science"
       ]
     },
     "public-speaking": {
@@ -3251,6 +3286,10 @@
       "seasons": [
         "fall",
         "spring"
+      ],
+      "tags": [
+        "education",
+        "psychology"
       ]
     },
     "teaching-young-children-2": {
@@ -3258,6 +3297,10 @@
       "seasons": [
         "fall",
         "spring"
+      ],
+      "tags": [
+        "education",
+        "psychology"
       ]
     },
     "technical-skills": {
